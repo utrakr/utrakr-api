@@ -1,3 +1,7 @@
+variable "app_version" {
+  default = "f5e3ecb"
+}
+
 resource "google_cloud_run_service" "app" {
   name     = "utrakr-api"
   location = "us-west1"
@@ -15,22 +19,22 @@ resource "google_cloud_run_service" "app" {
       service_account_name  = "575736837658-compute@developer.gserviceaccount.com"
 
       containers {
-        image = "us.gcr.io/utrakr/utrakr-api:df7198b"
+        image = "us.gcr.io/utrakr/utrakr-api:${var.app_version}"
 
         env {
           name  = "HOMEPAGE"
           value = "https://www.utrakr.app/"
         }
         env {
-          name = "DEFAULT_BASE_HOST"
+          name  = "DEFAULT_BASE_HOST"
           value = "utrakr.app"
         }
         env {
-          name = "DEFAULT_SECURE_HOST"
+          name  = "DEFAULT_SECURE_HOST"
           value = "true"
         }
         env {
-          name = "REDIS_URLS_CLIENT_CONN"
+          name  = "REDIS_URLS_CLIENT_CONN"
           value = "redis://127.0.0.1"
         }
 
