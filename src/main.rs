@@ -31,11 +31,11 @@ struct ShortenRequest {
 #[structopt(name = "utraker-api")]
 struct AppConfig {
     #[structopt(env)]
-    homepage: String,
+    redirect_homepage: String,
     #[structopt(env)]
     default_base_host: String,
     #[structopt(env, parse(try_from_str))]
-    default_secure_host: bool,
+    cookie_secure: bool,
     #[structopt(env)]
     redis_urls_client_conn: String,
 }
@@ -63,7 +63,7 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
     let id: String = req.param("id").unwrap_or("".into());
     let url_dao = &req.state().url_dao;
     let domain: String = req.state().app_config.default_base_host.to_owned();
-    let cookie_secure = req.state().app_config.default_secure_host;
+    let cookie_secure = req.state().app_config.cookie_secure;
 
     let found: Option<String> = url_dao
         .get_micro_url(&id)
@@ -113,7 +113,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut app = tide::with_state(app_state);
     app.at("/")
-        .get(Redirect::permanent(app_config.homepage))
+        .get(Redirect::permanent(app_config.redirect_homepage))
         .post(create_micro_url);
     app.at("/:id").get(redirect_micro_url);
     app.listen("0.0.0.0:8080").await?;

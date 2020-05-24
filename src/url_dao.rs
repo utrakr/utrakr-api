@@ -21,7 +21,7 @@ impl From<AppConfig> for UrlDaoConfig {
             redis_urls_client_conn: a.redis_urls_client_conn,
             default_base_url: format!(
                 "{}://{}",
-                if a.default_secure_host {
+                if a.cookie_secure {
                     "https"
                 } else {
                     "http"
