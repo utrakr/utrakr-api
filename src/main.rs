@@ -116,6 +116,6 @@ async fn main() -> Result<(), anyhow::Error> {
         .get(Redirect::permanent(app_config.homepage))
         .post(create_micro_url);
     app.at("/:id").get(redirect_micro_url);
-    app.listen("127.0.0.1:8080").await?;
+    app.listen("0.0.0.0:8080").await?;
     Ok(())
 }

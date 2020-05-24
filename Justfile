@@ -19,6 +19,8 @@ docker-build:
     docker build -t us.gcr.io/{{project_id}}/{{app}}:{{app_version}} .
 docker-push: docker-build
     docker push us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
+docker-run: docker-build
+    docker run --rm -it us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
 
 test:
     #!/bin/bash
