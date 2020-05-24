@@ -1,0 +1,25 @@
+[package]
+authors = ["Cameron Davison <cameron@utrakr.app>"]
+edition = "2018"
+name = "utrakr-api"
+version = "0.1.0"
+
+[dependencies]
+redis = "0.16.0"
+anyhow = "1.0"
+env_logger = "0.7"
+log = "0.4"
+serde = "1.0"
+structopt = "0.3"
+tide = "0.9.0"
+fehler = "1.0.0"
+chrono = "0.4"
+lazy_static = "1.4.0"
+rand = "0.7"
+cookie = "0.12.0"
+ulid = "0.3.1"
+time = "0.1.43"
+
+[dependencies.async-std]
+features = ["attributes"]
+version = "1.5.0"
