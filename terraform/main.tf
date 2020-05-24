@@ -25,6 +25,15 @@ data "terraform_remote_state" "crit_dns" {
   }
 }
 
+data "terraform_remote_state" "vpc" {
+  backend = "gcs"
+
+  config = {
+    bucket = "utrakr-all-terraform-state"
+    prefix = "vpc"
+  }
+}
+
 data "terraform_remote_state" "homepage" {
   backend = "gcs"
 
@@ -40,5 +49,5 @@ data "google_dns_managed_zone" "root" {
 
 locals {
   app      = "utrakr-api"
-  location = "us-west1"
+  location = data.terraform_remote_state.vpc.outputs["cloud_functions_connector_region"]
 }
