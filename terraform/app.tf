@@ -1,10 +1,19 @@
 variable "app_version" {
-  default = "f5e3ecb"
+  default = "caf71f3"
+}
+
+locals {
+  app      = "utrakr-api"
+  location = "us-west1"
+}
+
+resource "google_service_account" "app" {
+  account_id = local.app
 }
 
 resource "google_cloud_run_service" "app" {
-  name     = "utrakr-api"
-  location = "us-west1"
+  name     = local.app
+  location = local.location
 
   template {
     metadata {
@@ -16,13 +25,13 @@ resource "google_cloud_run_service" "app" {
 
     spec {
       container_concurrency = 80
-      service_account_name  = "575736837658-compute@developer.gserviceaccount.com"
+      service_account_name  = google_service_account.app.email
 
       containers {
         image = "us.gcr.io/utrakr/utrakr-api:${var.app_version}"
 
         env {
-          name  = "HOMEPAGE"
+          name  = "REDIRECT_HOMEPAGE"
           value = "https://www.utrakr.app/"
         }
         env {
@@ -30,7 +39,7 @@ resource "google_cloud_run_service" "app" {
           value = "utrakr.app"
         }
         env {
-          name  = "DEFAULT_SECURE_HOST"
+          name  = "COOKIE_SECURE"
           value = "true"
         }
         env {
@@ -59,4 +68,34 @@ resource "google_cloud_run_service" "app" {
   }
 
   autogenerate_revision_name = true
+}
+
+resource "google_cloud_run_domain_mapping" "app" {
+  name     = trimsuffix(data.google_dns_managed_zone.root.dns_name, ".")
+  location = google_cloud_run_service.app.location
+
+  metadata {
+    namespace = google_service_account.app.project
+  }
+
+  spec {
+    route_name = google_cloud_run_service.app.name
+  }
+}
+
+resource "google_dns_record_set" "app_dns" {
+  for_each = {
+    for dns_type in toset([
+      for zone in google_cloud_run_domain_mapping.app.status[0]["resource_records"] : zone.type
+    ]) :
+    dns_type => toset([
+      for zone in google_cloud_run_domain_mapping.app.status[0]["resource_records"] : zone.rrdata if zone.type == dns_type
+    ])
+  }
+
+  name         = data.google_dns_managed_zone.root.dns_name
+  managed_zone = data.google_dns_managed_zone.root.name
+  type         = each.key
+  rrdatas      = tolist(each.value)
+  ttl          = 3600
 }
