@@ -3,6 +3,7 @@ use crate::utils::trim_trailing_slash;
 use crate::AppConfig;
 use fehler::*;
 use redis::AsyncCommands;
+use anyhow::Context;
 
 pub struct UrlDao {
     redis_client: redis::Client,
@@ -49,10 +50,13 @@ impl UrlDao {
     #[throws(anyhow::Error)]
     pub async fn create_micro_url(&self, long_url: &str) -> String {
         info!("create micro url of [{}]", long_url);
-        let mut con = self.redis_client.get_async_connection().await?;
 
         let id = self.id_generator.gen_id();
         debug!("created id [{}] for long url [{}]", &id, long_url);
+
+        let mut con = self.redis_client.get_async_connection()
+            .await
+            .context(format!("unable to get connection to redis, {:?}", self.redis_client))?;
         con.set(&id, long_url).await?;
 
         format!("{}/{}", self.default_base_url, &id)

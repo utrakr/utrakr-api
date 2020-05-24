@@ -15,6 +15,7 @@ resource "google_cloud_run_service" "app" {
       annotations = {
         "autoscaling.knative.dev/maxScale" = "10"
         "run.googleapis.com/client-name"   = "terraform"
+        "run.googleapis.com/vpc-access-connector" = data.terraform_remote_state.vpc.outputs["cloud_functions_connector_id"]
       }
     }
 
@@ -63,6 +64,16 @@ resource "google_cloud_run_service" "app" {
   }
 
   autogenerate_revision_name = true
+}
+
+// make it public
+resource "google_cloud_run_service_iam_member" "member" {
+  for_each = toset(["allUsers", "allAuthenticatedUsers"])
+  location = google_cloud_run_service.app.location
+  project = google_cloud_run_service.app.project
+  service = google_cloud_run_service.app.name
+  role = "roles/run.invoker"
+  member = each.key
 }
 
 resource "google_cloud_run_domain_mapping" "app" {

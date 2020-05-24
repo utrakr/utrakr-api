@@ -23,6 +23,6 @@ RUN cargo build --release
 FROM debian:buster-slim
 COPY --from=build /tmp/utrakr-api/target/release/utrakr-api /
 
-ENV RUST_LOG=info
+ENV RUST_LOG="utrakr_api=debug,info"
 ENV RUST_BACKTRACE=full
 CMD ["/utrakr-api"]

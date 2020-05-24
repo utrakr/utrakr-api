@@ -73,6 +73,11 @@ resource "google_compute_instance" "redis" {
   network_interface {
     network    = data.google_compute_network.default.self_link
     subnetwork = data.google_compute_subnetwork.default.self_link
+
+    // we need either a nat or a public ip, since we need to pull public docker images
+    access_config {
+      network_tier = "STANDARD"
+    }
   }
 
   service_account {
