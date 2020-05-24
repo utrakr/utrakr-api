@@ -22,6 +22,11 @@ docker-push: docker-build
 docker-run: docker-build
     docker run --rm -it us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
 
+deploy: docker-push
+    #!/bin/bash
+    cd terraform
+    terraform apply -var "app_version={{app_version}}"
+
 test:
     #!/bin/bash
 

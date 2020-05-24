@@ -14,7 +14,7 @@ resource "google_cloud_run_service" "app" {
     metadata {
       annotations = {
         "autoscaling.knative.dev/maxScale" = "10"
-        "run.googleapis.com/client-name"   = "terraform"
+        "run.googleapis.com/client-name"   = "cloud-console"
         "run.googleapis.com/vpc-access-connector" = data.terraform_remote_state.vpc.outputs["cloud_functions_connector_id"]
       }
     }
