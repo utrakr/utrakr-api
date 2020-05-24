@@ -2,11 +2,6 @@ variable "app_version" {
   default = "caf71f3"
 }
 
-locals {
-  app      = "utrakr-api"
-  location = "us-west1"
-}
-
 resource "google_service_account" "app" {
   account_id = local.app
 }
@@ -32,7 +27,7 @@ resource "google_cloud_run_service" "app" {
 
         env {
           name  = "REDIRECT_HOMEPAGE"
-          value = "https://www.utrakr.app/"
+          value = data.terraform_remote_state.homepage.outputs["homepage"]
         }
         env {
           name  = "DEFAULT_BASE_HOST"
@@ -44,7 +39,7 @@ resource "google_cloud_run_service" "app" {
         }
         env {
           name  = "REDIS_URLS_CLIENT_CONN"
-          value = "redis://127.0.0.1"
+          value = "redis://${google_compute_instance.redis.network_interface[0].network_ip}"
         }
 
         resources {
