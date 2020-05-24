@@ -40,7 +40,7 @@ resource "google_cloud_run_service" "app" {
         }
         env {
           name  = "REDIS_URLS_CLIENT_CONN"
-          value = "redis://${google_compute_instance.redis.network_interface[0].network_ip}"
+          value = "redis://${google_compute_instance.redis.network_interface[0].address}"
         }
 
         resources {
