@@ -1,107 +1,103 @@
-variable "app_version" {
-  default = "caf71f3"
-}
-
 resource "google_service_account" "app" {
   account_id = local.app
 }
 
-resource "google_cloud_run_service" "app" {
-  name     = local.app
-  location = local.location
+// gcr is just a bucket
+resource "google_storage_bucket_iam_member" "gcr" {
+  bucket = "us.artifacts.utrakr.appspot.com"
+  member = "serviceAccount:${google_service_account.app.email}"
+  role = "roles/storage.objectViewer"
+}
 
-  template {
-    metadata {
-      annotations = {
-        "autoscaling.knative.dev/maxScale" = "10"
-        "run.googleapis.com/client-name"   = "cloud-console"
-        "run.googleapis.com/vpc-access-connector" = data.terraform_remote_state.vpc.outputs["cloud_functions_connector_id"]
-      }
+data "google_compute_zones" "default" {
+  region = data.google_compute_subnetwork.default.region
+}
+
+resource "random_shuffle" "app_zones" {
+  input        = data.google_compute_zones.default.names
+  result_count = 1
+}
+
+resource "google_compute_disk" "app_data" {
+  for_each = toset(random_shuffle.app_zones.result)
+  name     = "pd-${local.app}-data"
+  type     = "pd-standard"
+  size     = 10
+  zone     = each.key
+}
+
+resource "google_compute_address" "app" {
+  for_each     = google_compute_disk.app_data
+  name         = "${local.app}-${each.key}"
+  network_tier = "STANDARD"
+}
+
+data "template_file" "app_startup" {
+  for_each = google_compute_disk.app_data
+  template = file("${path.module}/startup.sh")
+  vars = {
+    device_name = each.value.name
+    // https://www.freedesktop.org/software/systemd/man/systemd.unit.html#String%20Escaping%20for%20Inclusion%20in%20Unit%20Names
+    // important do not use - which means folder
+    device_folder = "app_data" // mounted to /mnt/disks/<device_folder>
+  }
+}
+
+resource "google_compute_instance" "app" {
+  for_each     = google_compute_disk.app_data
+  name         = local.app
+  machine_type = "f1-micro"
+  zone         = each.value.zone
+
+  boot_disk {
+    initialize_params {
+      image = "cos-cloud/cos-stable"
+      size  = 10
+      type  = "pd-standard"
     }
+  }
 
-    spec {
-      container_concurrency = 80
-      service_account_name  = google_service_account.app.email
+  attached_disk {
+    mode        = "READ_WRITE"
+    device_name = each.value.name
+    source      = each.value.self_link
+  }
 
-      containers {
-        image = "us.gcr.io/utrakr/utrakr-api:${var.app_version}"
+  metadata = {
+    google-logging-enabled = "true"
+  }
 
-        env {
-          name  = "REDIRECT_HOMEPAGE"
-          value = data.terraform_remote_state.homepage.outputs["homepage"]
-        }
-        env {
-          name  = "DEFAULT_BASE_HOST"
-          value = "utrakr.app"
-        }
-        env {
-          name  = "COOKIE_SECURE"
-          value = "true"
-        }
-        env {
-          name  = "REDIS_URLS_CLIENT_CONN"
-          value = "redis://${google_compute_instance.redis.network_interface[0].address}"
-        }
+  metadata_startup_script = data.template_file.app_startup[each.key].rendered
 
-        resources {
-          limits = {
-            "cpu"    = "1000m"
-            "memory" = "128Mi"
-          }
-          requests = {}
-        }
-      }
+  tags = [
+    "http-server",
+    "https-server",
+  ]
+
+  network_interface {
+    network    = data.google_compute_network.default.self_link
+    subnetwork = data.google_compute_subnetwork.default.self_link
+
+    // we need either a nat or a public ip, since we need to pull public docker images
+    access_config {
+      nat_ip       = google_compute_address.app[each.key].address
+      network_tier = google_compute_address.app[each.key].network_tier
     }
   }
 
-  timeouts {
-
-  }
-
-  traffic {
-    latest_revision = true
-    percent         = 100
-  }
-
-  autogenerate_revision_name = true
-}
-
-// make it public
-resource "google_cloud_run_service_iam_member" "member" {
-  for_each = toset(["allUsers", "allAuthenticatedUsers"])
-  location = google_cloud_run_service.app.location
-  project = google_cloud_run_service.app.project
-  service = google_cloud_run_service.app.name
-  role = "roles/run.invoker"
-  member = each.key
-}
-
-resource "google_cloud_run_domain_mapping" "app" {
-  name     = trimsuffix(data.google_dns_managed_zone.root.dns_name, ".")
-  location = google_cloud_run_service.app.location
-
-  metadata {
-    namespace = google_service_account.app.project
-  }
-
-  spec {
-    route_name = google_cloud_run_service.app.name
+  service_account {
+    email = google_service_account.app.email
+    scopes = [
+      "https://www.googleapis.com/auth/cloud-platform",
+    ]
   }
 }
 
-resource "google_dns_record_set" "app_dns" {
-  for_each = {
-    for dns_type in toset([
-      for zone in google_cloud_run_domain_mapping.app.status[0]["resource_records"] : zone.type
-    ]) :
-    dns_type => toset([
-      for zone in google_cloud_run_domain_mapping.app.status[0]["resource_records"] : zone.rrdata if zone.type == dns_type
-    ])
-  }
-
-  name         = data.google_dns_managed_zone.root.dns_name
+resource "google_dns_record_set" "apex" {
   managed_zone = data.google_dns_managed_zone.root.name
-  type         = each.key
-  rrdatas      = tolist(each.value)
-  ttl          = 3600
+  name         = data.google_dns_managed_zone.root.dns_name
+
+  type    = "A"
+  rrdatas = [for _, v in google_compute_instance.app : v.network_interface[0].access_config[0].nat_ip]
+  ttl     = 3600
 }

@@ -1,6 +1,7 @@
 # meta
-project_id := "utrakr"
 app := "utrakr-api"
+project_id := "utrakr"
+zone := "us-central1-f"
 
 # version
 git_hash := "$(git rev-parse --short HEAD)"
@@ -22,10 +23,10 @@ docker-push: docker-build
 docker-run: docker-build
     docker run --rm -it us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
 
+ssh:
+    gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}}
 deploy: docker-push
-    #!/bin/bash
-    cd terraform
-    terraform apply -var "app_version={{app_version}}"
+    gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}} --command "VERSION={{app_version}} bash -s" < scripts/app-deploy.sh
 
 test:
     #!/bin/bash

@@ -1,9 +1,3 @@
-provider "google" {
-  project = "utrakr"
-  region  = "us-central1"
-  version = "~> 3.20"
-}
-
 terraform {
   required_version = "~> 0.12"
 }
@@ -14,6 +8,20 @@ terraform {
     bucket = "utrakr-all-terraform-state"
     prefix = "utrakr-api"
   }
+}
+
+provider "google" {
+  project = "utrakr"
+  region  = "us-central1"
+  version = "~> 3.20"
+}
+
+provider "random" {
+  version = "~> 2.2"
+}
+
+provider "template" {
+  version = "~> 2.1"
 }
 
 data "terraform_remote_state" "crit_dns" {
@@ -44,10 +52,18 @@ data "terraform_remote_state" "homepage" {
 }
 
 data "google_dns_managed_zone" "root" {
-  name = data.terraform_remote_state.crit_dns.outputs["root_zone_name"]
+  name = data.terraform_remote_state.crit_dns.outputs["google_dns_managed_zone_root"].name
+}
+
+data "google_compute_network" "default" {
+  name = data.terraform_remote_state.vpc.outputs["google_compute_network_default"].name
+}
+
+data "google_compute_subnetwork" "default" {
+  name   = data.terraform_remote_state.vpc.outputs["google_compute_subnetwork_default"].name
+  region = data.terraform_remote_state.vpc.outputs["google_compute_subnetwork_default"].region
 }
 
 locals {
-  app      = "utrakr-api"
-  location = data.terraform_remote_state.vpc.outputs["cloud_functions_connector_region"]
+  app = "utrakr-api"
 }
