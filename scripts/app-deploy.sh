@@ -10,13 +10,11 @@ APP=utrakr-api
 set -x
 docker-credential-gcr configure-docker
 
-docker network inspect local || docker network create local
-
 IMAGE=redis:6.0
 docker pull "${IMAGE}"
 docker rm -f "${APP}-redis" || :
 docker run --name "${APP}-redis" -d\
- --memory 200m --memory-swap 200m\
+ --memory 100m --memory-swap 100m\
  --network local\
  -v /mnt/disks/app_data/redis/:/data\
  "${IMAGE}"\
@@ -26,7 +24,7 @@ IMAGE="us.gcr.io/${PROJECT_ID}/${APP}:${VERSION}"
 docker pull "${IMAGE}"
 docker rm -f "${APP}" || :
 docker run --name "${APP}" -d\
- --memory 200m --memory-swap 200m\
+ --memory 100m --memory-swap 100m\
  --network local\
  -e REDIRECT_HOMEPAGE=https://www.utrakr.app\
  -e DEFAULT_BASE_HOST=utrakr.app\

@@ -8,6 +8,12 @@ git_hash := "$(git rev-parse --short HEAD)"
 git_dirty := "$([[ $(git diff --stat) != '' ]] && echo '-dirty')"
 app_version := git_hash + git_dirty
 
+gcloud-set-project:
+    gcloud config set project utrakr
+gcloud-auth: gcloud-set-project
+    gcloud auth login
+    gcloud auth application-default login
+
 setup-dev:
     docker rm -f {{app}}-redis || :
     docker run --name {{app}}-redis -d\

@@ -21,9 +21,15 @@ cat <<"EOF" > /etc/systemd/system/traefik.service
 Requires=docker.service mnt-disks-${device_folder}.mount
 After=docker.service mnt-disks-${device_folder}.mount
 
+StartLimitIntervalSec=500
+StartLimitBurst=5
 [Service]
+Restart=on-failure
+RestartSec=5s
+
 ExecStart=/usr/bin/docker run --rm --name traefik\
-  --memory 200m --memory-swap 200m\
+  --memory 100m --memory-swap 100m\
+  --network local\
   -p 80:80\
   -p 443:443\
   -p 8080:8080\
@@ -41,6 +47,9 @@ ExecStart=/usr/bin/docker run --rm --name traefik\
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# setup docker
+docker network inspect local || docker network create local
 
 # reload
 systemctl daemon-reload

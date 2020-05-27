@@ -72,6 +72,7 @@ resource "google_compute_instance" "app" {
   tags = [
     "http-server",
     "https-server",
+    "traefik-server",
   ]
 
   network_interface {
