@@ -3,7 +3,9 @@ extern crate log;
 
 use crate::url_dao::UrlDao;
 use cookie::Cookie;
+use http_types::headers::HeaderValue;
 use structopt::StructOpt;
+use tide::security::{CorsMiddleware, Origin};
 use tide::{Redirect, Request, Response, StatusCode};
 use time;
 use ulid::Ulid;
@@ -46,7 +48,7 @@ struct AppState {
 }
 
 async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> {
-    if let Ok(request) = req.body_form::<ShortenRequest>().await {
+    if let Ok(request) = req.body_json::<ShortenRequest>().await {
         let url_dao = &req.state().url_dao;
         let micro_url = url_dao
             .create_micro_url(&request.long_url)
@@ -116,6 +118,12 @@ async fn main() -> Result<(), anyhow::Error> {
         .get(Redirect::permanent(app_config.redirect_homepage))
         .post(create_micro_url);
     app.at("/:id").get(redirect_micro_url);
+
+    let cors = CorsMiddleware::new()
+        .allow_methods("GET, POST, OPTIONS".parse::<HeaderValue>().unwrap())
+        .allow_origin(Origin::from("*"))
+        .allow_credentials(false);
+    app.middleware(cors);
     app.listen("0.0.0.0:8080").await?;
     Ok(())
 }

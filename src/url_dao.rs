@@ -1,9 +1,9 @@
 use crate::id_generator::IdGenerator;
 use crate::utils::trim_trailing_slash;
 use crate::AppConfig;
+use anyhow::Context;
 use fehler::*;
 use redis::AsyncCommands;
-use anyhow::Context;
 
 pub struct UrlDao {
     redis_client: redis::Client,
@@ -22,11 +22,7 @@ impl From<AppConfig> for UrlDaoConfig {
             redis_urls_client_conn: a.redis_urls_client_conn,
             default_base_url: format!(
                 "{}://{}",
-                if a.cookie_secure {
-                    "https"
-                } else {
-                    "http"
-                },
+                if a.cookie_secure { "https" } else { "http" },
                 a.default_base_host
             ),
         }
@@ -54,9 +50,14 @@ impl UrlDao {
         let id = self.id_generator.gen_id();
         debug!("created id [{}] for long url [{}]", &id, long_url);
 
-        let mut con = self.redis_client.get_async_connection()
+        let mut con = self
+            .redis_client
+            .get_async_connection()
             .await
-            .context(format!("unable to get connection to redis, {:?}", self.redis_client))?;
+            .context(format!(
+                "unable to get connection to redis, {:?}",
+                self.redis_client
+            ))?;
         con.set(&id, long_url).await?;
 
         format!("{}/{}", self.default_base_url, &id)

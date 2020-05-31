@@ -1664,6 +1664,7 @@ dependencies = [
  "cookie",
  "env_logger",
  "fehler",
+ "http-types 2.0.0",
  "lazy_static",
  "log",
  "rand 0.7.3",
