@@ -8,6 +8,10 @@ git_hash := "$(git rev-parse --short HEAD)"
 git_dirty := "$([[ $(git diff --stat) != '' ]] && echo '-dirty')"
 app_version := git_hash + git_dirty
 
+fmt:
+    cargo fmt
+    terraform fmt -recursive
+
 gcloud-set-project:
     gcloud config set project utrakr
 gcloud-auth: gcloud-set-project

@@ -6,7 +6,7 @@ resource "google_service_account" "app" {
 resource "google_storage_bucket_iam_member" "gcr" {
   bucket = "us.artifacts.utrakr.appspot.com"
   member = "serviceAccount:${google_service_account.app.email}"
-  role = "roles/storage.objectViewer"
+  role   = "roles/storage.objectViewer"
 }
 
 data "google_compute_zones" "default" {
@@ -44,10 +44,11 @@ data "template_file" "app_startup" {
 }
 
 resource "google_compute_instance" "app" {
-  for_each     = google_compute_disk.app_data
-  name         = local.app
-  machine_type = "f1-micro"
-  zone         = each.value.zone
+  for_each                  = google_compute_disk.app_data
+  name                      = local.app
+  machine_type              = "e2-micro"
+  zone                      = each.value.zone
+  allow_stopping_for_update = true
 
   boot_disk {
     initialize_params {
