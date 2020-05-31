@@ -106,7 +106,7 @@ async fn main() -> Result<(), anyhow::Error> {
     env_logger::init();
 
     let app_config: AppConfig = StructOpt::from_args();
-    info!("loading app config {:?}", app_config);
+    info!("loading config {:?}", app_config);
 
     let app_state = AppState {
         url_dao: UrlDao::new(app_config.clone().into())?,

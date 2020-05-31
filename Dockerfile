@@ -17,7 +17,12 @@ RUN cargo build --release
 
 # copy source and rebuild
 COPY src/ /tmp/${app}/src/
-RUN cargo build --release
+RUN set +x\
+ && find src\
+ && cargo build --release
+
+# check
+RUN ./target/release/utrakr-api --version 
 
 # copy binary into smaller image with same base as rust
 FROM debian:buster-slim
