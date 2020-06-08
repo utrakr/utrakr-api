@@ -9,6 +9,17 @@ resource "google_storage_bucket_iam_member" "gcr" {
   role   = "roles/storage.objectViewer"
 }
 
+resource "google_pubsub_topic" "app_event_logs" {
+  name   = "app-event-logs"
+  labels = {}
+}
+
+resource "google_pubsub_topic_iam_member" "app_event_logs_member" {
+  topic  = google_pubsub_topic.app_event_logs.id
+  member = "serviceAccount:${google_service_account.app.email}"
+  role   = "roles/owner"
+}
+
 data "google_compute_zones" "default" {
   region = data.google_compute_subnetwork.default.region
 }

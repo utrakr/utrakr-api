@@ -1,5 +1,5 @@
 pub fn trim_trailing_slash(s: &str) -> String {
-    s.trim_end_matches("/").into()
+    s.trim_end_matches('/').into()
 }
 
 #[cfg(test)]

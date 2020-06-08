@@ -16,14 +16,18 @@ pub struct UrlDaoConfig {
     default_base_url: String,
 }
 
-impl From<AppConfig> for UrlDaoConfig {
-    fn from(a: AppConfig) -> Self {
+pub trait IntoUrlDaoConfig {
+    fn into_url_dao_config(self) -> UrlDaoConfig;
+}
+
+impl IntoUrlDaoConfig for &AppConfig {
+    fn into_url_dao_config(self) -> UrlDaoConfig {
         UrlDaoConfig {
-            redis_urls_client_conn: a.redis_urls_client_conn,
+            redis_urls_client_conn: self.redis_urls_client_conn.to_owned(),
             default_base_url: format!(
                 "{}://{}",
-                if a.cookie_secure { "https" } else { "http" },
-                a.default_base_host
+                if self.cookie_secure { "https" } else { "http" },
+                self.default_base_host
             ),
         }
     }
@@ -31,10 +35,11 @@ impl From<AppConfig> for UrlDaoConfig {
 
 impl UrlDao {
     #[throws(anyhow::Error)]
-    pub fn new(config: UrlDaoConfig) -> UrlDao {
-        let redis_client = redis::Client::open(config.redis_urls_client_conn)?;
+    pub fn new<T: IntoUrlDaoConfig>(config: T) -> UrlDao {
+        let url_config: UrlDaoConfig = config.into_url_dao_config();
+        let redis_client = redis::Client::open(url_config.redis_urls_client_conn.as_str())?;
         let id_generator = IdGenerator::new(8);
-        let default_base_url = trim_trailing_slash(&config.default_base_url);
+        let default_base_url = trim_trailing_slash(&url_config.default_base_url);
 
         UrlDao {
             redis_client,

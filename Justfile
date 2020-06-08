@@ -40,5 +40,9 @@ deploy: docker-push
 
 test:
     #!/bin/bash
+    set -euo pipefail
+    IFS=$'\n\t'
 
-    curl --fail --cookie-jar /tmp/c --cookie /tmp/c -v http://localhost:8080/id
+    reps="$(curl -s --fail -d '{"long_url":"http://example.com"}' http://127.0.0.1:8080)"
+    echo "${reps}" | jq -c .
+    curl --fail --cookie-jar /tmp/cookie --cookie /tmp/cookie -v "$(echo "${reps}" | jq -r .micro_url)"
