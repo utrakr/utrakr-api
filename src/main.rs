@@ -45,7 +45,9 @@ struct RedirectEvent {
 struct RedirectCookieInfo {
     value: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    expires: Option<String>
+    expires: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    domain: Option<String>,
 }
 
 impl RedirectEvent {
@@ -58,7 +60,9 @@ impl RedirectEvent {
     fn set_from_cookie(&mut self, c: &Cookie) {
         self.cookie = Some(RedirectCookieInfo {
             value: c.value().to_string(),
-            expires: c.expires().map(|t| t.to_utc().rfc3339().to_string()), // only logs on creation
+            // only logs on creation
+            expires: c.expires().map(|t| t.to_utc().rfc3339().to_string()),
+            domain: c.domain().map(|s| s.to_owned()),
         })
     }
     fn add_header_values(&mut self, header: &str, values: &HeaderValues) {

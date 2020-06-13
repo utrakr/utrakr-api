@@ -37,6 +37,8 @@ ssh:
     gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}}
 deploy: docker-push
     gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}} --command "VERSION={{app_version}} bash -s" < scripts/app-deploy.sh
+tail-event-log:
+    gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}} --command 'tail -f "$(find /mnt/disks/app_data/utrakr-api/event-logs/ -type f -printf "%T+ %p\\n" | sort | tail -n 1 | awk "{print \$2}")"'
 
 test:
     #!/bin/bash
