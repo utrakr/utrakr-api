@@ -2,10 +2,11 @@
 extern crate log;
 
 use crate::event_logger::EventLogger;
-use crate::url_dao::{UrlDao, MicroUrlInfo};
+use crate::url_dao::{MicroUrlInfo, UrlDao};
 use async_std::sync::{Arc, Mutex};
 use cookie::Cookie;
-use http_types::headers::HeaderValue;
+use http_types::headers::{HeaderValue, HeaderValues};
+use multimap::MultiMap;
 use structopt::StructOpt;
 use tide::security::{CorsMiddleware, Origin};
 use tide::{Redirect, Request, Response, StatusCode};
@@ -34,6 +35,40 @@ struct ShortenRequest {
     long_url: String,
 }
 
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct RedirectEvent {
+    cookie: Option<RedirectCookieInfo>,
+    headers: MultiMap<String, String>,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct RedirectCookieInfo {
+    value: String,
+    expires: Option<String>
+}
+
+impl RedirectEvent {
+    fn empty() -> RedirectEvent {
+        RedirectEvent {
+            cookie: None,
+            headers: MultiMap::new(),
+        }
+    }
+    fn set_from_cookie(&mut self, c: &Cookie) {
+        self.cookie = Some(RedirectCookieInfo {
+            value: c.value().to_string(),
+            expires: c.expires().map(|t| t.to_utc().rfc3339().to_string()),
+        })
+    }
+    fn add_header_values(&mut self, header: &str, values: &HeaderValues) {
+        for header_value in values {
+            let value: String = header_value.to_string();
+            debug!("{}: {}", header, value);
+            self.headers.insert(header.to_owned(), value);
+        }
+    }
+}
+
 #[derive(Debug, StructOpt, Clone)]
 #[structopt(name = "utrakr-api")]
 struct AppConfig {
@@ -45,8 +80,8 @@ struct AppConfig {
     cookie_secure: bool,
     #[structopt(env)]
     redis_urls_client_conn: String,
-    #[structopt(env, parse(try_from_str), default_value="/tmp/utrakr-api")]
-    event_log_folder: PathBuf
+    #[structopt(env, parse(try_from_str), default_value = "/tmp/utrakr-api")]
+    event_log_folder: PathBuf,
 }
 
 struct AppState {
@@ -90,10 +125,12 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
     match found {
         Some(long_url) => {
             let mut response = Response::redirect(long_url);
+            let mut event = RedirectEvent::empty();
 
             // build or save cookie
             if let Some(c) = req.cookie(COOKIE_NAME) {
                 debug!("cookie: {}", c);
+                event.set_from_cookie(&c);
             } else {
                 let mut gen = req.state().ulid_generator.lock().await;
                 let mut cookie = Cookie::new(COOKIE_NAME, gen.generate()?.to_string());
@@ -105,20 +142,25 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
                 if !domain.starts_with("localhost") {
                     cookie.set_domain(domain);
                 }
+                event.set_from_cookie(&cookie);
                 response.set_cookie(cookie);
             };
 
-            // read some other headers
+            // read headers
             for header in LOG_HEADERS.iter() {
                 match req.header(*header) {
                     Some(values) => {
-                        for value in values {
-                            debug!("{}: {}", header, value)
-                        }
+                        event.add_header_values(*header, values);
                     }
                     _ => (),
                 }
             }
+
+            let event_logger = &req.state().event_logger;
+            event_logger
+                .log_event("redirect", &event)
+                .await
+                .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
 
             Ok(response)
         }
@@ -137,7 +179,8 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let url_dao = UrlDao::new(&app_config)?;
     let redirect = Redirect::permanent(app_config.redirect_homepage.to_owned());
-    let event_logger = EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone());
+    let event_logger =
+        EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone());
 
     let app_state = AppState {
         url_dao,
