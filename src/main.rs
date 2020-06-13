@@ -2,7 +2,7 @@
 extern crate log;
 
 use crate::event_logger::EventLogger;
-use crate::url_dao::UrlDao;
+use crate::url_dao::{UrlDao, MicroUrlInfo};
 use async_std::sync::{Arc, Mutex};
 use cookie::Cookie;
 use http_types::headers::HeaderValue;
@@ -24,7 +24,7 @@ const COOKIE_NAME: &str = "_utrakr";
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ShortenResponse {
-    micro_url: String,
+    data: MicroUrlInfo,
     request: ShortenRequest,
 }
 
@@ -56,12 +56,12 @@ struct AppState {
 async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> {
     if let Ok(request) = req.body_json::<ShortenRequest>().await {
         let url_dao = &req.state().url_dao;
-        let micro_url = url_dao
+        let data = url_dao
             .create_micro_url(&request.long_url)
             .await
             .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
 
-        let response = ShortenResponse { micro_url, request };
+        let response = ShortenResponse { data, request };
         let event_logger = &req.state().event_logger;
         event_logger
             .log_event("create", &response)

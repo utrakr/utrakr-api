@@ -20,6 +20,13 @@ pub trait IntoUrlDaoConfig {
     fn into_url_dao_config(self) -> UrlDaoConfig;
 }
 
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct MicroUrlInfo {
+    pub base_url: String,
+    pub id: String,
+    pub micro_url: String,
+}
+
 impl IntoUrlDaoConfig for &AppConfig {
     fn into_url_dao_config(self) -> UrlDaoConfig {
         UrlDaoConfig {
@@ -49,7 +56,7 @@ impl UrlDao {
     }
 
     #[throws(anyhow::Error)]
-    pub async fn create_micro_url(&self, long_url: &str) -> String {
+    pub async fn create_micro_url(&self, long_url: &str) -> MicroUrlInfo {
         info!("create micro url of [{}]", long_url);
 
         let id = self.id_generator.gen_id();
@@ -65,7 +72,12 @@ impl UrlDao {
             ))?;
         con.set(&id, long_url).await?;
 
-        format!("{}/{}", self.default_base_url, &id)
+        let micro_url = format!("{}/{}", self.default_base_url, &id);
+        MicroUrlInfo {
+            base_url: self.default_base_url.to_string(),
+            id,
+            micro_url,
+        }
     }
 
     #[throws(anyhow::Error)]
