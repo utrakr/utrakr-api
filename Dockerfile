@@ -1,28 +1,26 @@
 FROM rust:1.44 as build
 
-# app name
+# app
 ENV app=utrakr-api
 
-# fetch dependencies
-WORKDIR /tmp
-RUN USER=root cargo new ${app}
+# dependencies
 WORKDIR /tmp/${app}
-COPY Cargo.toml Cargo.lock /tmp/${app}/
-RUN cargo fetch
+COPY Cargo.toml Cargo.lock ./
 
 # compile dependencies
-RUN mkdir -p /tmp/${app}/src/\
- && echo 'fn main() {}' > /tmp/${app}/src/main.rs
-RUN cargo build --release
+RUN set -x\
+ && mkdir -p src\
+ && echo "fn main() {println!(\"broken\")}" > src/main.rs\
+ && cargo build --release
 
 # copy source and rebuild
-COPY src/ /tmp/${app}/src/
-RUN set +x\
- && find src\
+COPY src/ src/
+RUN set -x\
+ && find target/release -type f -name "$(echo "${app}" | tr '-' '_')*" -exec touch -t 200001010000 {} +\
  && cargo build --release
 
 # check
-RUN ./target/release/utrakr-api --version 
+RUN ["/bin/bash", "-c", "set -x && /tmp/${app}/target/release/${app} --version | grep ${app}"]
 
 # copy binary into smaller image with same base as rust
 FROM debian:buster-slim

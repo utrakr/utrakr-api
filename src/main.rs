@@ -34,7 +34,7 @@ struct ShortenRequest {
 }
 
 #[derive(Debug, StructOpt, Clone)]
-#[structopt(name = "utraker-api")]
+#[structopt(name = "utrakr-api")]
 struct AppConfig {
     #[structopt(env)]
     redirect_homepage: String,
