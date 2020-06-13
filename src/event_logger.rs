@@ -20,9 +20,8 @@ pub struct EventLoggerOutputState {
 }
 
 impl EventLogger {
-    pub fn new(ulid_generator: Arc<Mutex<UlidGenerator>>) -> EventLogger {
+    pub fn new(folder: PathBuf, ulid_generator: Arc<Mutex<UlidGenerator>>) -> EventLogger {
         let prev_ulid = Ulid::default();
-        let folder: PathBuf = "/tmp/utrakr-api".into();
         let state = Mutex::new(EventLoggerOutputState {
             prev_ulid,
             folder,

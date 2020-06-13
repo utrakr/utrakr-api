@@ -30,6 +30,7 @@ docker run --name "${APP}" -d\
  -e DEFAULT_BASE_HOST=utrakr.app\
  -e COOKIE_SECURE=true\
  -e REDIS_URLS_CLIENT_CONN=redis://${APP}-redis\
+ -e EVENT_LOG_FOLDER=/data/utrakr-api/event/logs\
  -l traefik.enable=true\
  -l traefik.http.middlewares.${APP}_redirect.redirectscheme.scheme=https\
  -l traefik.http.routers.${APP}_http.entrypoints=web\

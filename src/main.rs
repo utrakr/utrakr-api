@@ -17,6 +17,7 @@ mod url_dao;
 mod utils;
 
 use crate::ulid::UlidGenerator;
+use std::path::PathBuf;
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
 
@@ -44,6 +45,8 @@ struct AppConfig {
     cookie_secure: bool,
     #[structopt(env)]
     redis_urls_client_conn: String,
+    #[structopt(env, parse(try_from_str), default_value="/tmp/utrakr-api")]
+    event_log_folder: PathBuf
 }
 
 struct AppState {
@@ -134,7 +137,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let url_dao = UrlDao::new(&app_config)?;
     let redirect = Redirect::permanent(app_config.redirect_homepage.to_owned());
-    let event_logger = EventLogger::new(ulid_generator.clone());
+    let event_logger = EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone());
 
     let app_state = AppState {
         url_dao,
