@@ -42,7 +42,8 @@ test:
     #!/bin/bash
     set -euo pipefail
     IFS=$'\n\t'
+    loc="https://utrakr.app/"
 
-    reps="$(curl -s --fail -d '{"long_url":"http://example.com"}' http://127.0.0.1:8080)"
+    reps="$(curl -s --fail -d '{"long_url":"http://example.com"}' "${loc}")"
     echo "${reps}" | jq -c .
-    curl --fail --cookie-jar /tmp/cookie --cookie /tmp/cookie -v "$(echo "${reps}" | jq -r .micro_url)"
+    curl --fail --cookie-jar /tmp/cookie --cookie /tmp/cookie -v "$(echo "${reps}" | jq -r .data.micro_url)"
