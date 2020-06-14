@@ -6,10 +6,46 @@ PROJECT_ID=utrakr
 APP=utrakr-api
 : "${VERSION:?Variable not set or empty}"
 
-
 set -x
 docker-credential-gcr configure-docker
 
+# app event log services
+cat <<"EOF" > /etc/systemd/system/app-event-logs.service
+[Unit]
+Requires=docker.service
+After=docker.service
+Wants=app-event-logs.timer
+
+[Service]
+ExecStart=/usr/bin/docker run --rm --name app-event-logs\
+  --memory 100m --memory-swap 100m\
+  -v /mnt/disks/app_data/utrakr-api:/data\
+  gcr.io/google.com/cloudsdktool/cloud-sdk:alpine\
+  gsutil rsync -r /data gs://utrakr-prod-utrakr-api-data
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat <<"EOF" > /etc/systemd/system/app-event-logs.timer
+[Unit]
+Requires=app-event-logs.service
+
+[Timer]
+Unit=app-event-logs.service
+OnUnitInactiveSec=15m
+RandomizedDelaySec=1m
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+EOF
+
+sudo systemctl daemon-reload
+sudo enable app-event-logs.timer
+sudo systemctl start app-event-logs
+
+# redis
 IMAGE=redis:6.0
 docker pull "${IMAGE}"
 docker rm -f "${APP}-redis" || :
@@ -20,6 +56,7 @@ docker run --name "${APP}-redis" -d\
  "${IMAGE}"\
  redis-server --appendonly yes
 
+# app
 IMAGE="us.gcr.io/${PROJECT_ID}/${APP}:${VERSION}"
 docker pull "${IMAGE}"
 docker rm -f "${APP}" || :

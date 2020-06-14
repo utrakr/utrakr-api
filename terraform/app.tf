@@ -9,15 +9,14 @@ resource "google_storage_bucket_iam_member" "gcr" {
   role   = "roles/storage.objectViewer"
 }
 
-resource "google_pubsub_topic" "app_event_logs" {
-  name   = "app-event-logs"
-  labels = {}
+resource "google_storage_bucket" "app_data" {
+  name = "utrakr-prod-utrakr-api-data"
 }
 
-resource "google_pubsub_topic_iam_member" "app_event_logs_member" {
-  topic  = google_pubsub_topic.app_event_logs.id
+resource "google_storage_bucket_iam_member" "app_event_logs_member" {
+  bucket = google_storage_bucket.app_data.name
   member = "serviceAccount:${google_service_account.app.email}"
-  role   = "roles/owner"
+  role   = "roles/storage.admin"
 }
 
 data "google_compute_zones" "default" {
