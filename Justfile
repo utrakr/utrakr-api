@@ -31,7 +31,7 @@ docker-build:
 docker-push: docker-build
     docker push us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
 docker-run: docker-build
-    docker run --rm -it us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
+    docker run --rm -it --name utrakr-api us.gcr.io/{{project_id}}/{{app}}:{{app_version}}
 
 ssh:
     gcloud compute ssh utrakr-api --tunnel-through-iap --zone {{zone}}
