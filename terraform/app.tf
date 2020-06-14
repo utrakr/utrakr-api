@@ -2,6 +2,17 @@ resource "google_service_account" "app" {
   account_id = local.app
 }
 
+// add roles for instance logs writing, and metrics
+resource "google_project_iam_member" "logs" {
+  member = "serviceAccount:${google_service_account.app.email}"
+  role   = "roles/logging.logWriter"
+}
+// add roles for instance logs writing
+resource "google_project_iam_member" "metrics" {
+  member = "serviceAccount:${google_service_account.app.email}"
+  role   = "roles/monitoring.metricWriter"
+}
+
 // gcr is just a bucket
 resource "google_storage_bucket_iam_member" "gcr" {
   bucket = "us.artifacts.utrakr.appspot.com"
