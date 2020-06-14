@@ -197,8 +197,12 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let url_dao = UrlDao::new(&app_config)?;
     let redirect = Redirect::permanent(app_config.redirect_homepage.to_owned());
-    let event_logger: EventLogger =
-        EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone()).await?;
+    let event_logger: EventLogger = EventLogger::new(
+        app_config.event_log_folder.clone(),
+        APP_NAME,
+        ulid_generator.clone(),
+    )
+    .await?;
 
     event_logger.log_event("startup", &Startup { app }).await?;
     let app_state = AppState {
