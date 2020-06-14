@@ -10,6 +10,7 @@ use std::path::PathBuf;
 
 pub struct EventLogger {
     ulid_generator: Arc<Mutex<UlidGenerator>>,
+    logger_id: Ulid,
     state: Mutex<EventLoggerOutputState>,
 }
 
@@ -20,15 +21,18 @@ pub struct EventLoggerOutputState {
 }
 
 impl EventLogger {
-    pub fn new(folder: PathBuf, ulid_generator: Arc<Mutex<UlidGenerator>>) -> EventLogger {
+    #[throws(anyhow::Error)]
+    pub async fn new(folder: PathBuf, ulid_generator: Arc<Mutex<UlidGenerator>>) -> EventLogger {
         let prev_ulid = Ulid::default();
         let state = Mutex::new(EventLoggerOutputState {
             prev_ulid,
             folder,
             file: None,
         });
+        let logger_id = ulid_generator.lock().await.generate()?;
         EventLogger {
             ulid_generator,
+            logger_id,
             state,
         }
     }
@@ -44,7 +48,7 @@ impl EventLogger {
             file.push(format!("{}", now));
             std::fs::create_dir_all(&file)?;
             state.prev_ulid = ulid;
-            file.push(format!("{}.events.json", ulid));
+            file.push(format!("{}.{}.events.json", ulid, self.logger_id));
 
             let f = File::create(&file).await?;
             state.file = Some(f);

@@ -21,8 +21,8 @@ use crate::ulid::UlidGenerator;
 use std::path::PathBuf;
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
-
 const COOKIE_NAME: &str = "_utrakr";
+const APP_NAME: &str = "utrakr-api";
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ShortenResponse {
@@ -74,8 +74,18 @@ impl RedirectEvent {
     }
 }
 
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct App {
+    name: String,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct Startup {
+    app: App,
+}
+
 #[derive(Debug, StructOpt, Clone)]
-#[structopt(name = "utrakr-api")]
+#[structopt(name = APP_NAME)]
 struct AppConfig {
     #[structopt(env)]
     redirect_homepage: String,
@@ -177,6 +187,9 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
 async fn main() -> Result<(), anyhow::Error> {
     env_logger::init();
 
+    let app = App {
+        name: APP_NAME.to_owned(),
+    };
     let app_config: AppConfig = StructOpt::from_args();
     info!("loading config {:?}", app_config);
 
@@ -184,9 +197,10 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let url_dao = UrlDao::new(&app_config)?;
     let redirect = Redirect::permanent(app_config.redirect_homepage.to_owned());
-    let event_logger =
-        EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone());
+    let event_logger: EventLogger =
+        EventLogger::new(app_config.event_log_folder.clone(), ulid_generator.clone()).await?;
 
+    event_logger.log_event("startup", &Startup { app }).await?;
     let app_state = AppState {
         url_dao,
         app_config,
