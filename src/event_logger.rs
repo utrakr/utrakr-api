@@ -54,7 +54,7 @@ impl EventLogger {
             file.push(format!("{}", now));
             std::fs::create_dir_all(&file)?;
             state.prev_ulid = ulid;
-            file.push(format!("{}.{}.events.json", ulid, self.logger_id));
+            file.push(format!("{}.v20200603.{}.events.json", ulid, self.logger_id));
 
             let f = File::create(&file).await?;
             state.file = Some(f);
