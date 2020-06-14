@@ -87,13 +87,13 @@ struct Startup {
 #[derive(Debug, StructOpt, Clone)]
 #[structopt(name = APP_NAME)]
 struct AppConfig {
-    #[structopt(env)]
+    #[structopt(env, default_value = "http://localhost:1111")]
     redirect_homepage: String,
-    #[structopt(env)]
+    #[structopt(env, default_value = "localhost:8080")]
     default_base_host: String,
-    #[structopt(env, parse(try_from_str))]
+    #[structopt(env, parse(try_from_str), default_value = "false")]
     cookie_secure: bool,
-    #[structopt(env)]
+    #[structopt(env, default_value = "redis://127.0.0.1/")]
     redis_urls_client_conn: String,
     #[structopt(env, parse(try_from_str), default_value = "/tmp/utrakr-api")]
     event_log_folder: PathBuf,
