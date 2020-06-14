@@ -43,10 +43,10 @@ WantedBy=timers.target
 EOF
 
   systemctl daemon-reload
-  enable app-event-logs.timer
+  systemctl enable app-event-logs.timer
   systemctl start app-event-logs
 }
-sudo bash -c "$(declare -f install_app_events_cron); install_app_events_cron"
+sudo bash -c "$(declare -f install_app_events_cron); set -euo pipefail; install_app_events_cron"
 
 # redis
 IMAGE=redis:6.0
