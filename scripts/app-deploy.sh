@@ -9,8 +9,9 @@ APP=utrakr-api
 set -x
 docker-credential-gcr configure-docker
 
-# app event log services
-cat <<"EOF" > /etc/systemd/system/app-event-logs.service
+function install_app_events_cron() {
+  # app event log services
+  cat <<"EOF" > /etc/systemd/system/app-event-logs.service
 [Unit]
 Requires=docker.service
 After=docker.service
@@ -27,7 +28,7 @@ ExecStart=/usr/bin/docker run --rm --name app-event-logs\
 WantedBy=multi-user.target
 EOF
 
-cat <<"EOF" > /etc/systemd/system/app-event-logs.timer
+  cat <<"EOF" > /etc/systemd/system/app-event-logs.timer
 [Unit]
 Requires=app-event-logs.service
 
@@ -41,9 +42,11 @@ AccuracySec=1s
 WantedBy=timers.target
 EOF
 
-sudo systemctl daemon-reload
-sudo enable app-event-logs.timer
-sudo systemctl start app-event-logs
+  systemctl daemon-reload
+  enable app-event-logs.timer
+  systemctl start app-event-logs
+}
+sudo bash -c "$(declare -f install_app_events_cron); install_app_events_cron"
 
 # redis
 IMAGE=redis:6.0
