@@ -28,4 +28,4 @@ COPY --from=build /tmp/utrakr-api/target/release/utrakr-api /
 
 ENV RUST_LOG="utrakr_api=debug,info"
 ENV RUST_BACKTRACE=full
-CMD ["/utrakr-api"]
+ENTRYPOINT ["/utrakr-api"]
