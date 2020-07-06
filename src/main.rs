@@ -12,11 +12,13 @@ use tide::security::{CorsMiddleware, Origin};
 use tide::{Redirect, Request, Response, StatusCode};
 
 mod event_logger;
+mod google_auth;
 mod id_generator;
 mod ulid;
 mod url_dao;
 mod utils;
 
+use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
 use std::path::PathBuf;
 
@@ -28,11 +30,13 @@ const APP_NAME: &str = "utrakr-api";
 struct ShortenResponse {
     data: MicroUrlInfo,
     request: ShortenRequest,
+    google_auth: Option<GoogleClaims>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct ShortenRequest {
     long_url: String,
+    id_token: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -109,12 +113,24 @@ struct AppState {
 async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> {
     if let Ok(request) = req.body_json::<ShortenRequest>().await {
         let url_dao = &req.state().url_dao;
+        let google_auth = if let Some(ref tk) = request.id_token {
+            let auth = get_claim_from_google(tk)
+                .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
+            Some(auth)
+        } else {
+            None
+        };
+
         let data = url_dao
             .create_micro_url(&request.long_url)
             .await
             .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
 
-        let response = ShortenResponse { data, request };
+        let response = ShortenResponse {
+            data,
+            request,
+            google_auth,
+        };
         let event_logger = &req.state().event_logger;
         event_logger
             .log_event("create", &response)
