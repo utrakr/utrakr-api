@@ -7,6 +7,7 @@ resource "google_project_iam_member" "logs" {
   member = "serviceAccount:${google_service_account.app.email}"
   role   = "roles/logging.logWriter"
 }
+
 // add roles for instance logs writing
 resource "google_project_iam_member" "metrics" {
   member = "serviceAccount:${google_service_account.app.email}"
@@ -86,7 +87,7 @@ resource "google_compute_instance" "app" {
   }
 
   metadata = {
-    google-logging-enabled = "true"
+    google-logging-enabled = "false" // with lots of logs this could cost a bunch of money
   }
 
   metadata_startup_script = data.template_file.app_startup[each.key].rendered
