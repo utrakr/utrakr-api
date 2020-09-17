@@ -199,6 +199,14 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
     }
 }
 
+async fn ruok(_req: Request<AppState>) -> tide::Result<Response> {
+    Ok(Response::new(StatusCode::Ok).body_string("imok".to_owned()))
+}
+
+async fn views(_req: Request<AppState>) -> tide::Result<Response> {
+    Ok(Response::new(StatusCode::Ok).body_string("{}".to_owned()))
+}
+
 #[async_std::main]
 async fn main() -> Result<(), anyhow::Error> {
     env_logger::init();
@@ -230,8 +238,10 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // app
     let mut app = tide::with_state(app_state);
+    app.at("/private/ruok").get(ruok);
     app.at("/").get(redirect).post(create_micro_url);
     app.at("/:id").get(redirect_micro_url);
+    app.at("/api/views").get(views);
 
     // cors
     let cors = CorsMiddleware::new()
