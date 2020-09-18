@@ -125,3 +125,12 @@ resource "google_dns_record_set" "apex" {
   rrdatas = [for _, v in google_compute_instance.app : v.network_interface[0].access_config[0].nat_ip]
   ttl     = 3600
 }
+
+resource "google_dns_record_set" "api" {
+  managed_zone = data.google_dns_managed_zone.root.name
+  name         = "api.${data.google_dns_managed_zone.root.dns_name}"
+
+  type    = "CNAME"
+  rrdatas = [google_dns_record_set.apex.name]
+  ttl     = 3600
+}
