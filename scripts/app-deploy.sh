@@ -78,7 +78,7 @@ docker run --name "${APP}" -d\
  -l traefik.http.routers.${APP}_http.rule='Host(`utrakr.app`)'\
  -l traefik.http.routers.${APP}_http.middlewares=${APP}_redirect\
  -l traefik.http.routers.${APP}.entrypoints=websecure\
- -l traefik.http.routers.${APP}.rule='Host(`utrakr.app`)'\
+ -l traefik.http.routers.${APP}.rule='Host(`utrakr.app`) || Host(`api.utrakr.app`)'\
  -l traefik.http.routers.${APP}.tls.certresolver=le\
  -l traefik.http.services.${APP}.loadbalancer.server.port=8080\
  "${IMAGE}"
