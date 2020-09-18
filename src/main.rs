@@ -4,12 +4,12 @@ extern crate log;
 use crate::event_logger::EventLogger;
 use crate::url_dao::{MicroUrlInfo, UrlDao};
 use async_std::sync::{Arc, Mutex};
-use cookie::Cookie;
+use driftwood;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
 use tide::security::{CorsMiddleware, Origin};
-use tide::{Redirect, Request, Response, StatusCode};
+use tide::{Body, Redirect, Request, Response, StatusCode};
 
 mod event_logger;
 mod google_auth;
@@ -21,6 +21,8 @@ mod utils;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
 use std::path::PathBuf;
+use tide::http::Cookie;
+use time::{Duration, OffsetDateTime};
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
 const COOKIE_NAME: &str = "_utrakr";
@@ -65,7 +67,7 @@ impl RedirectEvent {
         self.cookie = Some(RedirectCookieInfo {
             value: c.value().to_string(),
             // only logs on creation
-            expires: c.expires().map(|t| t.to_utc().rfc3339().to_string()),
+            expires: c.expires().map(|t| t.to_string()),
             domain: c.domain().map(|s| s.to_owned()),
         })
     }
@@ -103,6 +105,7 @@ struct AppConfig {
     event_log_folder: PathBuf,
 }
 
+#[derive(Clone)]
 struct AppState {
     app_config: AppConfig,
     url_dao: url_dao::UrlDao,
@@ -137,7 +140,9 @@ async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> 
             .await
             .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
 
-        Ok(Response::new(StatusCode::Ok).body_json(&response)?)
+        Ok(Response::builder(StatusCode::Ok)
+            .body(Body::from_json(&response)?)
+            .build())
     } else {
         Ok(Response::new(StatusCode::UnprocessableEntity))
     }
@@ -155,7 +160,7 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
         .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
     match found {
         Some(long_url) => {
-            let mut response = Response::redirect(long_url);
+            let mut response: Response = Redirect::temporary(long_url).into();
             let mut event = RedirectEvent::empty();
 
             // build or save cookie
@@ -164,17 +169,21 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
                 event.set_from_cookie(&c);
             } else {
                 let mut gen = req.state().ulid_generator.lock().await;
-                let mut cookie = Cookie::new(COOKIE_NAME, gen.generate()?.to_string());
-                let mut now = time::now();
-                now.tm_year += 1;
-                cookie.set_expires(now);
-                cookie.set_http_only(true);
-                cookie.set_secure(cookie_secure);
-                if !domain.starts_with("localhost") {
-                    cookie.set_domain(domain);
-                }
+                let mut now = OffsetDateTime::now_utc();
+                now += Duration::weeks(52);
+                let cookie_builder = Cookie::build(COOKIE_NAME, gen.generate()?.to_string())
+                    .expires(now)
+                    .http_only(true)
+                    .secure(cookie_secure);
+
+                let cookie = (if !domain.starts_with("localhost") {
+                    cookie_builder.domain(domain)
+                } else {
+                    cookie_builder
+                })
+                .finish();
                 event.set_from_cookie(&cookie);
-                response.set_cookie(cookie);
+                response.insert_cookie(cookie);
             };
 
             // read headers
@@ -200,11 +209,23 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
 }
 
 async fn ruok(_req: Request<AppState>) -> tide::Result<Response> {
-    Ok(Response::new(StatusCode::Ok).body_string("imok".to_owned()))
+    Ok(Response::builder(StatusCode::Ok)
+        .body("imok".to_owned())
+        .build())
 }
 
-async fn views(_req: Request<AppState>) -> tide::Result<Response> {
-    Ok(Response::new(StatusCode::Ok).body_string("{}".to_owned()))
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct Views {
+    email: String,
+}
+
+async fn views(req: Request<AppState>) -> tide::Result<Response> {
+    let email = req.param("email")?;
+    let views = Views { email };
+
+    Ok(Response::builder(StatusCode::Ok)
+        .body(Body::from_json(&views)?)
+        .build())
 }
 
 #[async_std::main]
@@ -248,7 +269,10 @@ async fn main() -> Result<(), anyhow::Error> {
         .allow_methods("GET, POST, OPTIONS".parse::<HeaderValue>().unwrap())
         .allow_origin(Origin::from("*"))
         .allow_credentials(false);
-    app.middleware(cors);
+    app.with(cors);
+
+    // access logs
+    app.with(driftwood::ApacheCombinedLogger);
 
     // listen
     app.listen("0.0.0.0:8080").await?;

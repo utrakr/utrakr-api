@@ -8,11 +8,12 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::path::PathBuf;
 
+#[derive(Clone)]
 pub struct EventLogger {
     ulid_generator: Arc<Mutex<UlidGenerator>>,
     logger_id: Ulid,
     app: String,
-    state: Mutex<EventLoggerOutputState>,
+    state: Arc<Mutex<EventLoggerOutputState>>,
 }
 
 pub struct EventLoggerOutputState {
@@ -29,11 +30,11 @@ impl EventLogger {
         ulid_generator: Arc<Mutex<UlidGenerator>>,
     ) -> EventLogger {
         let prev_ulid = Ulid::default();
-        let state = Mutex::new(EventLoggerOutputState {
+        let state = Arc::new(Mutex::new(EventLoggerOutputState {
             prev_ulid,
             folder,
             file: None,
-        });
+        }));
         let logger_id = ulid_generator.lock().await.generate()?;
         EventLogger {
             ulid_generator,

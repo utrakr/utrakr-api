@@ -5,6 +5,7 @@ use anyhow::Context;
 use fehler::*;
 use redis::AsyncCommands;
 
+#[derive(Clone)]
 pub struct UrlDao {
     redis_client: redis::Client,
     id_generator: IdGenerator,

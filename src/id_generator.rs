@@ -2,6 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
 
+#[derive(Clone)]
 pub struct IdGenerator {
     len: u8,
 }
