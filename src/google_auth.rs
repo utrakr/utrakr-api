@@ -9,20 +9,20 @@ lazy_static! {
     static ref KEYS: Value = json!({
       "keys": [
         {
-          "alg": "RS256",
-          "use": "sig",
-          "kid": "a41a3570b8e3ae1b72caabcaa7b8d2db2065d7c1",
           "e": "AQAB",
           "kty": "RSA",
-          "n": "kricWoM-lZq1WJzz8hfcnQ_k_mzT5yHnApncngSgXHOeTw5UhUeqzUFr5Ok8qmdJqNh6_UeKykv1r1AR89_6ASBWlaHAZPzj5VmIry9QA385pywp3vHKQx1__Kj2ySkLhqpjY7Yjys62kSDkFQJy-LbvCmNxMoe1D8275KEMatTsCj6MjvDw8vul4Owkb_83rdONec9Vy32mk1KpmG_quuYzDlTfKD5ktKsraAuv2Fai9Obsl9oevULw6zH4Uks64W4-SMGJkEhXfAc1tnXEPGcfR3Uwo-jcN0SLou56TGF-TjTAOYHu9Np4UI8_-1vVfLsG7csN8rjd15wCABq7Vw"
+          "n": "o9K9HWGBMwnvSJWGYXEtKgu9p7Kqx6qH5t5WozS1kD79pMy4yiGyUXBwHbIs7KxnxwjBz65_QuLtiFQGhpKke8aqdj-v2TQUPQUHz0Q62nWM0f636JLocMJhRRBWZsEQhad5xK-Vy8gvuNKpby37dc5gxyjHKJx5Dt-XQHyP5qlXQw84lrGNGJg3d8j3frAi6cMJSEKr70xeaoAWNl4NOKT94fepKOuxKdVzZI1RiqgyZPA190BkK5UcnjiMzg_odgYSZWqp9pTNBKj0CHsFql3ynUiSo1jcXA6KCDW2AMNtOOLuzg0fq1UY-SmVnU94DKktD9DEtMFewP0F8C6PRQ",
+          "use": "sig",
+          "kid": "3f332b3e9b928bfe51bcf4f8da543cc4bd9d4724",
+          "alg": "RS256"
         },
         {
-          "e": "AQAB",
-          "alg": "RS256",
-          "n": "5749CAb1LariZ0YoufKRHW08VZUDS1KqC35jbBrTgfcWfPr-zVbKdxtLYMtZ9m3jxxcGp-C-P1Cx7Q38tCicj1GiYSTe7Nm0oioJPRxn3R48XgRo78i5yYOYXgpJSPIEWAT6bBSqkH5TYH4GWcoaOu4rRb368ygshTqcjyQ_64Yg2Zp2Ce1InJIzSfwlcayE53ng2GJYv7Wmvu6_YGriu7oVVr41TeOovZvcqcakTCPE1nRMOvE5vyv7rXv5Sxzsk3tmyRBG0LBZqRLvM4WhIvfvBF2CT3brlfNuqx3q7MYKna5n8xRl3JK8DucstXGXkV99nl1W81_OvbxcT268Yw",
+          "n": "qOpAAmY20iOCNu8c913YoMv01U817A_SrTsN6Ocgejp2CoBs9OeibGCzH6TibjxGbHPlC6LOk4dHDrqGkbhXaWPaISVlaqplzRAxpeEAkJhfuzFqqDtyN3wJPfj0skDn3TeTqmEydwLbexlwLMh8Pzsj-YwDQsEvono2y9Yq5jb3qNe2SsJUMpAm2lcM49EHdbvcwLx6taVBcs_UVbqurGvYp4AbfzNLlDoGe3lZBZ55OjDRcfxsOJsw-dCx4mTr-UGJe50LFUfG_bkZ18TTbGxHiJmqYUrnmM9LVyihM3rd_aQa5I_zBtwbMo6_ntDhiF4klYr_xgXhvGlxog0dEw",
           "use": "sig",
+          "e": "AQAB",
           "kty": "RSA",
-          "kid": "65b3feaad9db0f38b1b4ab94553ff17de4dd4d49"
+          "kid": "4b83f18023a855587f942e75102251120887f725",
+          "alg": "RS256"
         }
       ]
     });
