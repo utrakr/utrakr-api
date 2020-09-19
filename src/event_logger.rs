@@ -8,6 +8,8 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use std::path::PathBuf;
 
+const VERSION: &str = "20200603";
+
 #[derive(Clone)]
 pub struct EventLogger {
     ulid_generator: Arc<Mutex<UlidGenerator>>,
@@ -55,7 +57,7 @@ impl EventLogger {
             file.push(format!("{}", now));
             std::fs::create_dir_all(&file)?;
             state.prev_ulid = ulid;
-            file.push(format!("{}.v20200603.{}.events.json", ulid, self.logger_id));
+            file.push(format!("{}.v{}.{}.events.json", ulid, VERSION, self.logger_id));
 
             let f = File::create(&file).await?;
             state.file = Some(f);
