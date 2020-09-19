@@ -1,14 +1,25 @@
 #[macro_use]
 extern crate log;
 
-use crate::event_logger::EventLogger;
-use crate::url_dao::{MicroUrlInfo, UrlDao};
+use std::path::PathBuf;
+
 use async_std::sync::{Arc, Mutex};
+use chrono::{DateTime, Utc};
+use fehler::*;
+use http_types;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
+use tide::http::Cookie;
+use tide::log::LevelFilter;
 use tide::security::{CorsMiddleware, Origin};
 use tide::{Body, Redirect, Request, Response, StatusCode};
+use time::{Duration, OffsetDateTime};
+
+use crate::event_logger::EventLogger;
+use crate::google_auth::{get_claim_from_google, GoogleClaims};
+use crate::ulid::UlidGenerator;
+use crate::url_dao::{MicroUrlInfo, UrlDao};
 
 mod event_logger;
 mod google_auth;
@@ -16,13 +27,6 @@ mod id_generator;
 mod ulid;
 mod url_dao;
 mod utils;
-
-use crate::google_auth::{get_claim_from_google, GoogleClaims};
-use crate::ulid::UlidGenerator;
-use std::path::PathBuf;
-use tide::http::Cookie;
-use tide::log::LevelFilter;
-use time::{Duration, OffsetDateTime};
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
 const COOKIE_NAME: &str = "_utrakr";
@@ -119,9 +123,7 @@ async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> 
     if let Ok(request) = req.body_json::<ShortenRequest>().await {
         let url_dao = &req.state().url_dao;
         let google_auth = if let Some(ref tk) = request.id_token {
-            let auth = get_claim_from_google(tk)
-                .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
-            Some(auth)
+            get_claim_from_google(tk)
         } else {
             None
         };
@@ -217,20 +219,50 @@ async fn ruok(_req: Request<AppState>) -> tide::Result<Response> {
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
-struct Views {
+struct ViewsResponse {
+    request: ViewsRequest,
+    account: UserAccount,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct UserAccount {
     email: String,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ViewsRequest {
-    email: String,
+    from_date: DateTime<Utc>,
+    to_date: DateTime<Utc>,
 }
 
-async fn views(req: Request<AppState>) -> tide::Result<Response> {
-    let views: ViewsRequest = req.query()?;
-    Ok(Response::builder(StatusCode::Ok)
-        .body(Body::from_json(&views)?)
-        .build())
+#[throws(http_types::Error)]
+async fn views(req: Request<AppState>) -> Response {
+    let request: ViewsRequest = req.query()?;
+    if let Some(account) = read_auth(req) {
+        Response::builder(StatusCode::Ok)
+            .body(Body::from_json(&ViewsResponse { account, request })?)
+            .build()
+    } else {
+        Response::new(StatusCode::Unauthorized)
+    }
+}
+
+fn read_auth(req: Request<AppState>) -> Option<UserAccount> {
+    if let Some(auth) = req.header("authorization") {
+        if auth.as_str().starts_with("Bearer ") {
+            let jwt = &auth.as_str()["Bearer ".len()..];
+            if !jwt.is_empty() {
+                let claim = get_claim_from_google(jwt);
+                return claim.map(|c| UserAccount { email: c.email });
+            } else {
+                warn!("found bearer with no token")
+            }
+        } else {
+            warn!("found authorization with no bearer")
+        }
+    }
+    return None;
 }
 
 #[async_std::main]
