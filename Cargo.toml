@@ -3,11 +3,10 @@ authors = ["Cameron Davison <cameron@utrakr.app>"]
 edition = "2018"
 name = "utrakr-api"
 version = "0.1.0"
+
 [dependencies]
 anyhow = "^1.0"
 chrono = "^0.4"
-driftwood = "^0.0.3"
-env_logger = "^0.7"
 fehler = "^1.0.0"
 http-types = "^2"
 jsonwebtoken = "^7"

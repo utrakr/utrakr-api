@@ -4,7 +4,6 @@ extern crate log;
 use crate::event_logger::EventLogger;
 use crate::url_dao::{MicroUrlInfo, UrlDao};
 use async_std::sync::{Arc, Mutex};
-use driftwood;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
@@ -22,6 +21,7 @@ use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
 use std::path::PathBuf;
 use tide::http::Cookie;
+use tide::log::LevelFilter;
 use time::{Duration, OffsetDateTime};
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
@@ -93,6 +93,8 @@ struct Startup {
 #[derive(Debug, StructOpt, Clone)]
 #[structopt(name = APP_NAME)]
 struct AppConfig {
+    #[structopt(env, default_value = "debug")]
+    log_level: LevelFilter,
     #[structopt(env, default_value = "http://localhost:1111")]
     redirect_homepage: String,
     #[structopt(env, default_value = "localhost:8080")]
@@ -157,7 +159,7 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
     let found: Option<String> = url_dao
         .get_micro_url(&id)
         .await
-        .map_err(|e| tide::Error::from_str(StatusCode::InternalServerError, e))?;
+        .map_err(|e| tide::Error::new(StatusCode::InternalServerError, e))?;
     match found {
         Some(long_url) => {
             let mut response: Response = Redirect::temporary(long_url).into();
@@ -219,23 +221,26 @@ struct Views {
     email: String,
 }
 
-async fn views(req: Request<AppState>) -> tide::Result<Response> {
-    let email = req.param("email")?;
-    let views = Views { email };
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+struct ViewsRequest {
+    email: String,
+}
 
+async fn views(req: Request<AppState>) -> tide::Result<Response> {
+    let views: ViewsRequest = req.query()?;
     Ok(Response::builder(StatusCode::Ok)
         .body(Body::from_json(&views)?)
         .build())
 }
 
 #[async_std::main]
-async fn main() -> Result<(), anyhow::Error> {
-    env_logger::init();
-
+async fn main() -> tide::Result<()> {
     let app = App {
         name: APP_NAME.to_owned(),
     };
     let app_config: AppConfig = StructOpt::from_args();
+    tide::log::with_level(app_config.log_level);
+
     info!("loading config {:?}", app_config);
 
     let ulid_generator = Arc::new(Mutex::new(UlidGenerator::new()));
@@ -271,8 +276,8 @@ async fn main() -> Result<(), anyhow::Error> {
         .allow_credentials(false);
     app.with(cors);
 
-    // access logs
-    app.with(driftwood::ApacheCombinedLogger);
+    // logs
+    app.with(tide::log::LogMiddleware::new());
 
     // listen
     app.listen("0.0.0.0:8080").await?;
