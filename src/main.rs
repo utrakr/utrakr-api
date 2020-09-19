@@ -4,23 +4,24 @@ extern crate log;
 use std::path::PathBuf;
 
 use async_std::sync::{Arc, Mutex};
-use chrono::{DateTime, Utc};
 use fehler::*;
 use http_types;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
+use tide::{Body, Redirect, Request, Response, StatusCode};
 use tide::http::Cookie;
 use tide::log::LevelFilter;
 use tide::security::{CorsMiddleware, Origin};
-use tide::{Body, Redirect, Request, Response, StatusCode};
 use time::{Duration, OffsetDateTime};
 
+use crate::data::views::{get_views_data, ViewsData, ViewsRequest};
 use crate::event_logger::EventLogger;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
 use crate::url_dao::{MicroUrlInfo, UrlDao};
 
+mod data;
 mod event_logger;
 mod google_auth;
 mod id_generator;
@@ -222,6 +223,7 @@ async fn ruok(_req: Request<AppState>) -> tide::Result<Response> {
 struct ViewsResponse {
     request: ViewsRequest,
     account: UserAccount,
+    data: ViewsData,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -229,19 +231,13 @@ struct UserAccount {
     email: String,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ViewsRequest {
-    from_date: DateTime<Utc>,
-    to_date: DateTime<Utc>,
-}
-
 #[throws(http_types::Error)]
 async fn views(req: Request<AppState>) -> Response {
     let request: ViewsRequest = req.query()?;
     if let Some(account) = read_auth(req) {
+        let data = get_views_data(&request)?;
         Response::builder(StatusCode::Ok)
-            .body(Body::from_json(&ViewsResponse { account, request })?)
+            .body(Body::from_json(&ViewsResponse { account, request, data })?)
             .build()
     } else {
         Response::new(StatusCode::Unauthorized)
