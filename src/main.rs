@@ -16,18 +16,18 @@ use tide::security::{CorsMiddleware, Origin};
 use time::{Duration, OffsetDateTime};
 
 use crate::data::views::{get_views_data, ViewsData, ViewsRequest};
-use crate::event_logger::EventLogger;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
 use crate::url_dao::{MicroUrlInfo, UrlDao};
+use crate::events::event_logger::EventLogger;
 
 mod data;
-mod event_logger;
 mod google_auth;
 mod id_generator;
 mod ulid;
 mod url_dao;
 mod utils;
+mod events;
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
 const COOKIE_NAME: &str = "_utrakr";
