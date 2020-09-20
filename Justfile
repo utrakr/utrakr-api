@@ -20,10 +20,10 @@ gcloud-auth: gcloud-set-project
 
 setup-dev:
     docker rm -f {{app}}-redis || :
-    docker run --name {{app}}-redis -d\
-      -v ~/docker/data/{{app}}-redis/:/data\
-      -p 6379:6379\
-      redis:6.0\
+    docker run --name {{app}}-redis -d \
+      -v ~/docker/data/{{app}}-redis/:/data \
+      -p 6379:6379 \
+      redis:6.0 \
       redis-server --appendonly yes
 
 docker-build:
