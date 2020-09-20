@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="utrakr-api" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+    <option name="channel" value="DEFAULT" />
+    <option name="command" value="run --package utrakr-api --bin utrakr-api" />
+    <option name="allFeatures" value="false" />
+    <option name="emulateTerminal" value="false" />
+    <option name="backtrace" value="SHORT" />
+    <option name="workingDirectory" value="file://$USER_HOME$/HomeCode/utrakr/utrakr-api" />
+    <envs>
+      <env name="RUST_LOG" value="debug" />
+      <env name="EVENT_LOG_FOLDER" value="./data/event-logs" />
+    </envs>
+    <method v="2">
+      <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+    </method>
+  </configuration>
+</component>
