@@ -1,9 +1,10 @@
-use crate::id_generator::IdGenerator;
-use crate::utils::trim_trailing_slash;
-use crate::AppConfig;
 use anyhow::Context;
 use fehler::*;
 use redis::AsyncCommands;
+
+use crate::id_generator::IdGenerator;
+use crate::utils::trim_trailing_slash;
+use crate::AppConfig;
 
 #[derive(Clone)]
 pub struct UrlDao {

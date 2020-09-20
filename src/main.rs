@@ -9,26 +9,26 @@ use http_types;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
-use tide::{Body, Redirect, Request, Response, StatusCode};
 use tide::http::Cookie;
 use tide::log::LevelFilter;
 use tide::security::{CorsMiddleware, Origin};
+use tide::{Body, Redirect, Request, Response, StatusCode};
 use time::{Duration, OffsetDateTime};
 
+use crate::dao::url_dao;
+use crate::dao::url_dao::{MicroUrlInfo, UrlDao};
 use crate::data::views::{get_views_data, ViewsData, ViewsRequest};
+use crate::events::event_logger::EventLogger;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
 use crate::ulid::UlidGenerator;
-use crate::events::event_logger::EventLogger;
-use crate::dao::url_dao;
-use crate::dao::url_dao::{UrlDao, MicroUrlInfo};
 
+mod dao;
 mod data;
+mod events;
 mod google_auth;
 mod id_generator;
 mod ulid;
 mod utils;
-mod events;
-mod dao;
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
 const COOKIE_NAME: &str = "_utrakr";
@@ -238,7 +238,11 @@ async fn views(req: Request<AppState>) -> Response {
     if let Some(account) = read_auth(req) {
         let data = get_views_data(&request)?;
         Response::builder(StatusCode::Ok)
-            .body(Body::from_json(&ViewsResponse { account, request, data })?)
+            .body(Body::from_json(&ViewsResponse {
+                account,
+                request,
+                data,
+            })?)
             .build()
     } else {
         Response::new(StatusCode::Unauthorized)
@@ -277,7 +281,7 @@ async fn main() -> tide::Result<()> {
     let url_dao = UrlDao::new(&app_config)?;
     let redirect = Redirect::permanent(app_config.redirect_homepage.to_owned());
     let event_logger: EventLogger = EventLogger::new(
-        app_config.event_log_folder.clone(),
+        &app_config.event_log_folder,
         APP_NAME,
         ulid_generator.clone(),
     )

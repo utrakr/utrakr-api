@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -26,9 +29,6 @@ lazy_static! {
       ]
     });
 }
-
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GoogleClaims {

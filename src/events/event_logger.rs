@@ -1,4 +1,5 @@
-use crate::ulid::{Ulid, UlidGenerator};
+use std::path::PathBuf;
+
 use async_std::fs::File;
 use async_std::io::BufWriter;
 use async_std::prelude::*;
@@ -6,7 +7,8 @@ use async_std::sync::{Arc, Mutex};
 use fehler::*;
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::path::PathBuf;
+
+use crate::ulid::{Ulid, UlidGenerator};
 
 const VERSION: &str = "20200603";
 
@@ -27,14 +29,14 @@ pub struct EventLoggerOutputState {
 impl EventLogger {
     #[throws(anyhow::Error)]
     pub async fn new(
-        folder: PathBuf,
+        folder: &PathBuf,
         app: &str,
         ulid_generator: Arc<Mutex<UlidGenerator>>,
     ) -> EventLogger {
         let prev_ulid = Ulid::default();
         let state = Arc::new(Mutex::new(EventLoggerOutputState {
             prev_ulid,
-            folder,
+            folder: folder.clone(),
             file: None,
         }));
         let logger_id = ulid_generator.lock().await.generate()?;
@@ -57,7 +59,10 @@ impl EventLogger {
             file.push(format!("{}", now));
             std::fs::create_dir_all(&file)?;
             state.prev_ulid = ulid;
-            file.push(format!("{}.v{}.{}.events.json", ulid, VERSION, self.logger_id));
+            file.push(format!(
+                "{}.v{}.{}.events.json",
+                ulid, VERSION, self.logger_id
+            ));
 
             let f = File::create(&file).await?;
             state.file = Some(f);
@@ -76,6 +81,7 @@ impl EventLogger {
         T: ?Sized + Serialize,
     {
         let ulid = self.ulid_generator.lock().await.generate()?;
+        // todo: way to use serde but make sure that it is in this exact order?
         let event = json!({
             "_": ulid,
             "_a": self.app,
