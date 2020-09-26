@@ -34,30 +34,21 @@ impl EventReader {
     pub fn events_iter(&self) -> u64 {
         let mut events = 0;
         let walker = WalkDir::new(&self.folder).into_iter();
-        for entry in walker {
-            let entry = entry?;
-            if entry
-                .path()
-                .to_str()
-                .map(|s| s.ends_with(".events.json"))
-                .unwrap_or(false)
-            {
-                let data = BufReader::new(File::open(entry.path())?);
-                for log_event in Deserializer::from_reader(data).into_iter::<LogEvent>() {
-                    let log_event = log_event?;
-                    println!("{:?}", log_event);
-                    events += 1;
-                }
+        for entry in walker.filter_map(|e| e.ok()).filter(is_event_log) {
+            let data = BufReader::new(File::open(entry.path())?);
+            for log_event in Deserializer::from_reader(data).into_iter::<LogEvent>() {
+                let log_event = log_event?;
+                println!("{:?}", log_event);
+                events += 1;
             }
         }
         events
     }
 }
 
-fn is_event_log(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
+fn is_event_log(e: &DirEntry) -> bool {
+    e.file_name()
         .to_str()
-        .map(|s| s.ends_with(".events.json"))
+        .map(|e| e.ends_with(".events.json"))
         .unwrap_or(false)
 }
