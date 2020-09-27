@@ -33,7 +33,9 @@ impl EventReader {
         let walker = WalkDir::new(&self.folder)
             .into_iter()
             .filter_map(|e| e.ok())
-            .filter(is_event_log);
+            .filter(is_event_log)
+            .map(|e| entry_to_log_entry_iterator(e))
+            .filter_map(|e| e.ok());
 
         LogEventsIter {
             walker: Box::new(walker),
@@ -43,7 +45,7 @@ impl EventReader {
 }
 
 pub struct LogEventsIter {
-    walker: Box<dyn Iterator<Item = DirEntry>>,
+    walker: Box<dyn Iterator<Item = Box<dyn Iterator<Item = LogEvent>>>>,
     cur: Option<Box<dyn Iterator<Item = LogEvent>>>,
 }
 
@@ -53,7 +55,7 @@ impl Iterator for LogEventsIter {
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if self.cur.is_none() {
-                self.cur = self.read_next_file();
+                self.cur = self.walker.next();
             }
 
             if let Some(cur) = &mut self.cur {
@@ -72,16 +74,13 @@ impl Iterator for LogEventsIter {
     }
 }
 
-impl LogEventsIter {
-    fn read_next_file(&mut self) -> Option<Box<dyn Iterator<Item = LogEvent>>> {
-        self.walker.next().map(|e| entry_to_log_entry_iterator(e))
-    }
-}
-
-fn entry_to_log_entry_iterator(entry: DirEntry) -> Box<dyn Iterator<Item = LogEvent>> {
-    let data = BufReader::new(File::open(entry.path()).unwrap());
+fn entry_to_log_entry_iterator(
+    entry: DirEntry,
+) -> anyhow::Result<Box<dyn Iterator<Item = LogEvent>>> {
+    let file = File::open(entry.path())?;
+    let data = BufReader::new(file);
     let deserializer = Deserializer::from_reader(data).into_iter::<LogEvent>();
-    Box::new(deserializer.filter_map(|e| e.ok()))
+    Ok(Box::new(deserializer.filter_map(|e| e.ok())))
 }
 
 fn is_event_log(e: &DirEntry) -> bool {
