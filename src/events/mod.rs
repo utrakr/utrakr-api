@@ -21,6 +21,9 @@ mod tests {
         let reader = EventReader::new(&tmp);
         let writer: EventLogger = EventLogger::new(&tmp, "test", gen).await?;
         writer.log_event("cat", "event").await?;
-        assert_eq!(1, reader.events_iter()?);
+        assert_eq!(1, reader.iter().count());
+        for evt in reader.iter() {
+            println!("{:?}", evt);
+        }
     }
 }
