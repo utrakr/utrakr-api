@@ -27,6 +27,12 @@ mod tests {
     use crate::ulid::UlidGenerator;
     use std::fs::File;
     use std::io::{BufRead, BufReader};
+    use serde_json::from_value;
+
+    #[derive(Debug, serde::Deserialize, serde::Serialize)]
+    struct TestEvent {
+        color: String
+    }
 
     #[throws(anyhow::Error)]
     #[async_std::test]
@@ -36,10 +42,11 @@ mod tests {
 
         let reader = EventReader::new(&tmp);
         let writer: EventLogger = EventLogger::new(&tmp, "test", gen).await?;
-        writer.log_event("cat", "event").await?;
+        writer.log_event("cat", &TestEvent{color: "green".to_owned()}).await?;
         assert_eq!(1, reader.iter().count());
         for evt in reader.iter() {
-            println!("{:?}", evt);
+            let te: TestEvent = from_value(evt.event)?;
+            assert_eq!("green", te.color);
         }
     }
 
