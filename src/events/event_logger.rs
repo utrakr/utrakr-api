@@ -6,9 +6,10 @@ use async_std::prelude::*;
 use async_std::sync::{Arc, Mutex};
 use fehler::*;
 use serde::Serialize;
-use serde_json::{json, Value};
 
+use crate::events::LogEvent;
 use crate::ulid::{Ulid, UlidGenerator};
+use serde_json::to_value;
 
 const VERSION: &str = "20200603";
 
@@ -49,7 +50,7 @@ impl EventLogger {
     }
 
     #[throws(anyhow::Error)]
-    async fn write_event(&self, ulid: Ulid, event: Value) -> () {
+    async fn write_event<T: Serialize>(&self, ulid: Ulid, event: T) -> () {
         let mut state = self.state.lock().await;
         let prev = &state.prev_ulid.to_string()[..6];
         let now = &ulid.to_string()[..6];
@@ -82,13 +83,12 @@ impl EventLogger {
     {
         let ulid = self.ulid_generator.lock().await.generate()?;
         // todo: way to use serde but make sure that it is in this exact order?
-        let event = json!({
-            "_": ulid,
-            "_a": self.app,
-            "_c": category,
-            "event": event,
-        });
-
+        let event = LogEvent {
+            id: ulid,
+            app: self.app.to_string(),
+            category: category.to_string(),
+            event: to_value(event)?,
+        };
         self.write_event(ulid, event).await?;
     }
 }
