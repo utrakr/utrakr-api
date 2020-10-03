@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
 
+use serde::de::DeserializeOwned;
 use serde_json::Deserializer;
 use walkdir::{DirEntry, WalkDir};
 
@@ -25,7 +26,10 @@ impl EventReader {
             .filter(is_event_log)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = LogEvent> {
+    pub fn iter<T>(&self) -> impl Iterator<Item = LogEvent<T>>
+    where
+        T: DeserializeOwned,
+    {
         self.files_iter()
             .map(|e| entry_to_log_entry_iterator(e))
             .filter_map(|e| e.ok())
@@ -33,9 +37,14 @@ impl EventReader {
     }
 }
 
-fn entry_to_log_entry_iterator(entry: DirEntry) -> anyhow::Result<impl Iterator<Item = LogEvent>> {
+fn entry_to_log_entry_iterator<T>(
+    entry: DirEntry,
+) -> anyhow::Result<impl Iterator<Item = LogEvent<T>>>
+where
+    T: DeserializeOwned,
+{
     let data = BufReader::new(File::open(entry.path())?);
-    let deserializer = Deserializer::from_reader(data).into_iter::<LogEvent>();
+    let deserializer = Deserializer::from_reader(data).into_iter::<LogEvent<T>>();
     Ok(deserializer.filter_map(|e| e.ok()))
 }
 

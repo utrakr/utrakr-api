@@ -7,9 +7,9 @@ use async_std::sync::{Arc, Mutex};
 use fehler::*;
 use serde::Serialize;
 
+
 use crate::events::LogEvent;
 use crate::ulid::{Ulid, UlidGenerator};
-use serde_json::to_value;
 
 const VERSION: &str = "20200603";
 
@@ -87,7 +87,7 @@ impl EventLogger {
             id: ulid,
             app: self.app.to_string(),
             category: category.to_string(),
-            event: to_value(event)?,
+            event,
         };
         self.write_event(ulid, event).await?;
     }
