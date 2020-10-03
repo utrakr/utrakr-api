@@ -29,58 +29,23 @@ impl EventReader {
         }
     }
 
-    pub fn iter(&self) -> LogEventsIter {
-        let walker = WalkDir::new(&self.folder)
+    pub fn iter(&self) -> impl Iterator<Item = LogEvent> {
+        WalkDir::new(&self.folder)
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(is_event_log)
             .map(|e| entry_to_log_entry_iterator(e))
-            .filter_map(|e| e.ok());
-
-        LogEventsIter {
-            walker: Box::new(walker),
-            cur: None,
-        }
-    }
-}
-
-pub struct LogEventsIter {
-    walker: Box<dyn Iterator<Item = Box<dyn Iterator<Item = LogEvent>>>>,
-    cur: Option<Box<dyn Iterator<Item = LogEvent>>>,
-}
-
-impl Iterator for LogEventsIter {
-    type Item = LogEvent;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if self.cur.is_none() {
-                self.cur = self.walker.next();
-            }
-
-            if let Some(cur) = &mut self.cur {
-                if let Some(log_event) = cur.next() {
-                    // found a log event we are good
-                    return Some(log_event);
-                } else {
-                    // did not find one, the current file is done
-                    self.cur = None
-                }
-            } else {
-                // we have run out of new files
-                return None;
-            }
-        }
+            .filter_map(|e| e.ok())
+            .flatten()
     }
 }
 
 fn entry_to_log_entry_iterator(
     entry: DirEntry,
-) -> anyhow::Result<Box<dyn Iterator<Item = LogEvent>>> {
-    let file = File::open(entry.path())?;
-    let data = BufReader::new(file);
+) -> anyhow::Result<impl Iterator<Item = LogEvent>> {
+    let data = BufReader::new(File::open(entry.path())?);
     let deserializer = Deserializer::from_reader(data).into_iter::<LogEvent>();
-    Ok(Box::new(deserializer.filter_map(|e| e.ok())))
+    Ok(deserializer.filter_map(|e| e.ok()))
 }
 
 fn is_event_log(e: &DirEntry) -> bool {
