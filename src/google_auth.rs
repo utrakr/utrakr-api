@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use jsonwebtoken::{Algorithm, decode, DecodingKey, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

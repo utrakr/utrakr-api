@@ -7,7 +7,6 @@ use async_std::sync::{Arc, Mutex};
 use fehler::*;
 use serde::Serialize;
 
-
 use crate::events::LogEvent;
 use crate::ulid::{Ulid, UlidGenerator};
 
@@ -82,7 +81,6 @@ impl EventLogger {
         T: ?Sized + Serialize,
     {
         let ulid = self.ulid_generator.lock().await.generate()?;
-        // todo: way to use serde but make sure that it is in this exact order?
         let event = LogEvent {
             id: ulid,
             app: self.app.to_string(),

@@ -1,6 +1,3 @@
-
-
-
 use crate::ulid::Ulid;
 
 pub mod event_logger;

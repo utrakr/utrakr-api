@@ -3,8 +3,8 @@ use std::str::FromStr;
 
 use chrono::{DateTime, TimeZone, Utc};
 use lazy_static::lazy_static;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::export::Formatter;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Ulid {
