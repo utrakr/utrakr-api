@@ -1,4 +1,4 @@
-FROM rust:1.44 as build
+FROM rust:1.46.0 as build
 
 # app
 ENV app=utrakr-api
