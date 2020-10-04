@@ -3,9 +3,9 @@ authors = ["Cameron Davison <cameron@utrakr.app>"]
 edition = "2018"
 name = "utrakr-api"
 version = "0.1.0"
-[[bench]]
-harness = false
-name = "events"
+#[[bench]]
+#harness = false
+#name = "events"
 
 [dependencies]
 anyhow = "^1.0"
