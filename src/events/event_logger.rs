@@ -8,7 +8,7 @@ use fehler::*;
 use serde::Serialize;
 
 use crate::events::LogEvent;
-use crate::ulid::{Ulid, UlidGenerator};
+use crate::events::ulid::{UlidGenerator, Ulid};
 
 const VERSION: &str = "20200603";
 

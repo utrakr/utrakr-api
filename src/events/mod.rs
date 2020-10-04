@@ -1,7 +1,8 @@
-use crate::ulid::Ulid;
+use crate::events::ulid::Ulid;
 
 pub mod event_logger;
 pub mod event_reader;
+pub mod ulid;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct LogEvent<T> {
@@ -17,12 +18,14 @@ pub struct LogEvent<T> {
 #[allow(unused_variables)]
 #[cfg(test)]
 mod tests {
-    use crate::events::event_logger::EventLogger;
-    use crate::events::event_reader::EventReader;
-    use crate::ulid::UlidGenerator;
-    use async_std::sync::{Arc, Mutex};
     use std::fs::File;
     use std::io::{BufRead, BufReader};
+
+    use async_std::sync::{Arc, Mutex};
+
+    use crate::events::event_logger::EventLogger;
+    use crate::events::event_reader::EventReader;
+    use crate::events::ulid::UlidGenerator;
 
     #[derive(Debug, serde::Deserialize, serde::Serialize)]
     struct TestEvent {

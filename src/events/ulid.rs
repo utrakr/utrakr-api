@@ -251,7 +251,7 @@ mod tests {
 
     use fehler::*;
 
-    use crate::ulid::{Ulid, UlidGenerator};
+    use crate::events::ulid::{UlidGenerator, Ulid};
 
     #[test]
     #[throws(anyhow::Error)]

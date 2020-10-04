@@ -14,7 +14,7 @@ fmt:
 lint:
     cargo clippy
 lint-fix:
-    cargo +nightly clippy --fix -Z unstable-options
+    cargo +nightly clippy --fix -Z unstable-options --allow-dirty --allow-staged
 
 gcloud-set-project:
     gcloud config set project utrakr

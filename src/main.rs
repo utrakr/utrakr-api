@@ -19,14 +19,13 @@ use crate::dao::url_dao::{MicroUrlInfo, UrlDao};
 use crate::data::views::{get_views_data, ViewsData, ViewsRequest};
 use crate::events::event_logger::EventLogger;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
-use crate::ulid::UlidGenerator;
+use crate::events::ulid::UlidGenerator;
 
 mod dao;
 mod data;
 mod events;
 mod google_auth;
 mod id_generator;
-mod ulid;
 mod utils;
 
 const LOG_HEADERS: [&str; 2] = ["user-agent", "referer"];
