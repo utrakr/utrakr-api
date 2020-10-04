@@ -69,6 +69,7 @@ mod tests {
             let data = BufReader::new(File::open(entry.path()).unwrap());
             for line in data.lines() {
                 let line = line.unwrap();
+                assert!(line.starts_with("{\"_\":"));
                 assert!(line.find("\"_\":") < line.find("\"_a\":"));
                 assert!(line.find("\"_a\":") < line.find("\"_c\":"));
             }
