@@ -4,7 +4,7 @@ use utrakr_api::events::event_reader::EventReader;
 use utrakr_api::events::ulid::UlidGenerator;
 use async_std::sync::{Arc, Mutex};
 use async_std::task;
-use std::io::BufRead;
+
 
 fn criterion_benchmark(c: &mut Criterion) {
     task::block_on(async {
@@ -28,7 +28,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         }
         c.bench_function("reader", |b| b.iter(|| {
             for e in reader.iter::<String>() {
-                let e = black_box(e);
+                let _e = black_box(e);
             }
         }));
     });

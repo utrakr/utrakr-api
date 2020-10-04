@@ -199,11 +199,17 @@ impl<'de> Deserialize<'de> for Ulid {
     }
 }
 
+impl Default for UlidGenerator {
+    fn default() -> Self {
+        UlidGenerator {
+            previous: Ulid::default()
+        }
+    }
+}
+
 impl UlidGenerator {
     pub fn new() -> UlidGenerator {
-        UlidGenerator {
-            previous: Ulid::default(),
-        }
+        UlidGenerator::default()
     }
 
     pub fn generate(&mut self) -> Result<Ulid, MonotonicError> {

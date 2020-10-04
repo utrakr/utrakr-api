@@ -45,6 +45,7 @@ mod tests {
         writer.log_event("cat", &test_event).await.unwrap();
         assert_eq!(1, reader.iter::<TestEvent>().count());
         for evt in reader.iter::<TestEvent>() {
+            let evt = evt.unwrap();
             assert_eq!("green", evt.event.color);
         }
     }
