@@ -17,15 +17,12 @@ pub struct LogEvent<T> {
 #[allow(unused_variables)]
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
-
-    use async_std::sync::{Arc, Mutex};
-    use tempfile;
-
     use crate::events::event_logger::EventLogger;
     use crate::events::event_reader::EventReader;
     use crate::ulid::UlidGenerator;
+    use async_std::sync::{Arc, Mutex};
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
 
     #[derive(Debug, serde::Deserialize, serde::Serialize)]
     struct TestEvent {

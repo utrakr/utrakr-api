@@ -5,7 +5,6 @@ use std::path::PathBuf;
 
 use async_std::sync::{Arc, Mutex};
 use fehler::*;
-use http_types;
 use http_types::headers::{HeaderValue, HeaderValues};
 use multimap::MultiMap;
 use structopt::StructOpt;
@@ -194,11 +193,8 @@ async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
 
             // read headers
             for header in LOG_HEADERS.iter() {
-                match req.header(*header) {
-                    Some(values) => {
-                        event.add_header_values(*header, values);
-                    }
-                    _ => (),
+                if let Some(values) = req.header(*header) {
+                    event.add_header_values(*header, values);
                 }
             }
 
@@ -263,7 +259,7 @@ fn read_auth(req: Request<AppState>) -> Option<UserAccount> {
             warn!("found authorization with no bearer")
         }
     }
-    return None;
+    None
 }
 
 #[async_std::main]

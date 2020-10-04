@@ -121,10 +121,6 @@ impl Ulid {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        encode(self.inner)
-    }
-
     pub fn from_string(input: &str) -> Result<Ulid, DecodeError> {
         decode(input).map(|i| i.into())
     }
@@ -154,7 +150,7 @@ impl fmt::Debug for Ulid {
 
 impl fmt::Display for Ulid {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.to_string())
+        write!(f, "{}", encode(self.inner))
     }
 }
 

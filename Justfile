@@ -11,6 +11,10 @@ app_version := git_hash + git_dirty
 fmt:
     cargo fmt
     terraform fmt -recursive
+lint:
+    cargo clippy
+lint-fix:
+    cargo +nightly clippy --fix -Z unstable-options
 
 gcloud-set-project:
     gcloud config set project utrakr
@@ -45,7 +49,7 @@ tail-event-log:
 data-sync:
     gsutil -m rsync -r gs://utrakr-prod-utrakr-api-data ./data
 
-test:
+integration-test:
     #!/bin/bash
     set -euo pipefail
     IFS=$'\n\t'

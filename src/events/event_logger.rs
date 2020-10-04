@@ -56,7 +56,7 @@ impl EventLogger {
 
         if prev != now || state.file.is_none() {
             let mut file = state.folder.clone();
-            file.push(format!("{}", now));
+            file.push(now.to_string());
             std::fs::create_dir_all(&file)?;
             state.prev_ulid = ulid;
             file.push(format!(

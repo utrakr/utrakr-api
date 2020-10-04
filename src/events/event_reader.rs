@@ -31,7 +31,7 @@ impl EventReader {
         T: DeserializeOwned,
     {
         self.files_iter()
-            .map(|e| entry_to_log_entry_iterator(e))
+            .map(entry_to_log_entry_iterator)
             .filter_map(|e| e.ok())
             .flatten()
     }
