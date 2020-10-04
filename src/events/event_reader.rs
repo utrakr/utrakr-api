@@ -8,10 +8,10 @@ use walkdir::{DirEntry, WalkDir};
 
 use crate::events::LogEvent;
 
+use anyhow::Error;
+use anyhow::Result;
 use either::Either;
 use std::iter::once;
-use anyhow::Result;
-use anyhow::Error;
 
 pub struct EventReader {
     folder: PathBuf,
@@ -35,8 +35,7 @@ impl EventReader {
     where
         T: DeserializeOwned,
     {
-        let r = self.files_iter()
-            .map(entry_to_log_entry_iterator);
+        let r = self.files_iter().map(entry_to_log_entry_iterator);
         flatten_nested_results(r)
     }
 }
@@ -59,10 +58,12 @@ fn is_event_log(e: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-fn flatten_nested_results<T, E, IterInner, IterOuter>(iter_outer: IterOuter) -> impl Iterator<Item = Result<T, E>>
-    where
-        IterOuter: Iterator<Item = Result<IterInner, E>>,
-        IterInner: Iterator<Item = Result<T, E>>,
+fn flatten_nested_results<T, E, IterInner, IterOuter>(
+    iter_outer: IterOuter,
+) -> impl Iterator<Item = Result<T, E>>
+where
+    IterOuter: Iterator<Item = Result<IterInner, E>>,
+    IterInner: Iterator<Item = Result<T, E>>,
 {
     iter_outer.flat_map(|iter_inner_result| match iter_inner_result {
         Ok(iter_inner) => Either::Right(iter_inner),

@@ -7,8 +7,8 @@ use async_std::sync::{Arc, Mutex};
 use fehler::*;
 use serde::Serialize;
 
+use crate::events::ulid::{Ulid, UlidGenerator};
 use crate::events::LogEvent;
-use crate::events::ulid::{UlidGenerator, Ulid};
 
 const VERSION: &str = "20200603";
 

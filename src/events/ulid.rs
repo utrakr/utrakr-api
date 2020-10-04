@@ -202,7 +202,7 @@ impl<'de> Deserialize<'de> for Ulid {
 impl Default for UlidGenerator {
     fn default() -> Self {
         UlidGenerator {
-            previous: Ulid::default()
+            previous: Ulid::default(),
         }
     }
 }
@@ -257,7 +257,7 @@ mod tests {
 
     use fehler::*;
 
-    use crate::events::ulid::{UlidGenerator, Ulid};
+    use crate::events::ulid::{Ulid, UlidGenerator};
 
     #[test]
     #[throws(anyhow::Error)]
