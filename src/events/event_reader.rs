@@ -13,6 +13,7 @@ use anyhow::Result;
 use either::Either;
 use std::iter::once;
 
+#[derive(Clone)]
 pub struct EventReader {
     folder: PathBuf,
 }

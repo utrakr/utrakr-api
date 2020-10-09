@@ -7,12 +7,12 @@ pub mod ulid;
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct LogEvent<T> {
     #[serde(rename = "_")]
-    id: Ulid,
+    pub id: Ulid,
     #[serde(rename = "_a")]
-    app: String,
+    pub app: String,
     #[serde(rename = "_c")]
-    category: String,
-    event: T,
+    pub category: String,
+    pub event: T,
 }
 
 #[allow(unused_variables)]

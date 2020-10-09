@@ -14,9 +14,8 @@ use tide::security::{CorsMiddleware, Origin};
 use tide::{Body, Redirect, Request, Response, StatusCode};
 use time::{Duration, OffsetDateTime};
 
-use crate::dao::url_dao;
 use crate::dao::url_dao::{MicroUrlInfo, UrlDao};
-use crate::data::views::{get_views_data, ViewsData, ViewsRequest};
+use crate::data::views::{ViewsDao, ViewsData, ViewsRequest};
 use crate::events::event_logger::EventLogger;
 use crate::events::ulid::UlidGenerator;
 use crate::google_auth::{get_claim_from_google, GoogleClaims};
@@ -114,7 +113,8 @@ struct AppConfig {
 #[derive(Clone)]
 struct AppState {
     app_config: AppConfig,
-    url_dao: url_dao::UrlDao,
+    url_dao: UrlDao,
+    views_dao: ViewsDao,
     event_logger: EventLogger,
     ulid_generator: Arc<Mutex<UlidGenerator>>,
 }
@@ -230,8 +230,10 @@ struct UserAccount {
 #[throws(http_types::Error)]
 async fn views(req: Request<AppState>) -> Response {
     let request: ViewsRequest = req.query()?;
-    if let Some(account) = read_auth(req) {
-        let data = get_views_data(&request)?;
+    let views_dao = &req.state().views_dao;
+
+    if let Some(account) = read_auth(&req) {
+        let data = views_dao.get_views_data(&request)?;
         Response::builder(StatusCode::Ok)
             .body(Body::from_json(&ViewsResponse {
                 account,
@@ -244,7 +246,7 @@ async fn views(req: Request<AppState>) -> Response {
     }
 }
 
-fn read_auth(req: Request<AppState>) -> Option<UserAccount> {
+fn read_auth(req: &Request<AppState>) -> Option<UserAccount> {
     if let Some(auth) = req.header("authorization") {
         if auth.as_str().starts_with("Bearer ") {
             let jwt = &auth.as_str()["Bearer ".len()..];
@@ -282,10 +284,12 @@ async fn main() -> tide::Result<()> {
     )
     .await?;
 
+    let views_dao = ViewsDao::from_path(&app_config.event_log_folder);
     event_logger.log_event("startup", &Startup { app }).await?;
     let app_state = AppState {
-        url_dao,
         app_config,
+        url_dao,
+        views_dao,
         event_logger,
         ulid_generator,
     };
