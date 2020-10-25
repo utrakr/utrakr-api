@@ -1,7 +1,6 @@
 use crate::events::event_reader::EventReader;
 use crate::events::LogEvent;
 
-
 use chrono::prelude::*;
 use chrono::{DateTime, Duration, DurationRound, Utc};
 use fehler::*;
@@ -14,8 +13,7 @@ use std::path::PathBuf;
 pub struct ViewsRequest {
     from_date: DateTime<Utc>,
     to_date: DateTime<Utc>,
-    #[serde(with = "parse_duration")]
-    group_by_duration: Option<Duration>,
+    group_by_duration: Option<String>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -41,7 +39,11 @@ impl ViewsDao {
     #[throws(anyhow::Error)]
     pub fn get_views_data(&self, request: &ViewsRequest) -> ViewsData {
         let time_range = request.from_date.timestamp_millis()..request.to_date.timestamp_millis();
-        let dur = request.group_by_duration.unwrap_or_else(|| Duration::hours(1));
+        let dur = request
+            .group_by_duration
+            .as_ref()
+            .map(parse_duration)
+            .unwrap_or_else(|| Duration::hours(1));
 
         let events = self.event_reader.iter::<Value>();
         let events = events
@@ -71,25 +73,6 @@ impl LogEvent<Value> {
     }
 }
 
-mod parse_duration {
-    use chrono::{Duration};
-    use serde::{Deserializer, Serializer};
-
-    pub fn serialize<S>(duration: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        if let Some(duration) = duration {
-            serializer.serialize_str(&duration.to_string())
-        } else {
-            serializer.serialize_none()
-        }
-    }
-
-    pub fn deserialize<'de, D>(_deserializer: D) -> Result<Option<Duration>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        unimplemented!()
-    }
+fn parse_duration(_dur: &String) -> Duration {
+    unimplemented!()
 }

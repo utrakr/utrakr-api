@@ -33,5 +33,9 @@ version = "*"
 features = ["derive"]
 version = "*"
 
+[dependencies.ureq]
+features = ["json"]
+version = "*"
+
 [dev-dependencies]
 tempfile = "*"
