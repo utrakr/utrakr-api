@@ -4,34 +4,34 @@ edition = "2018"
 name = "utrakr-api"
 version = "0.1.0"
 [dependencies]
-anyhow = "^1.0"
+anyhow = "*"
 either = "*"
-fehler = "^1.0.0"
-http-types = "^2"
+fehler = "*"
+http-types = "*"
 itertools = "*"
-jsonwebtoken = "^7"
-lazy_static = "^1.4.0"
-log = "^0.4"
-multimap = "^0.8"
-rand = "^0.7"
-redis = "^0.16.0"
-serde_json = "^1.0"
-structopt = "^0.3"
-tide = "^0.13.0"
-time = "^0.2.20"
-walkdir = "2"
+jsonwebtoken = "*"
+lazy_static = "*"
+log = "*"
+multimap = "*"
+rand = "*"
+redis = "*"
+serde_json = "*"
+structopt = "*"
+tide = "*"
+time = "*"
+walkdir = "*"
 
 [dependencies.async-std]
 features = ["attributes"]
-version = "^1.6.0"
+version = "*"
 
 [dependencies.chrono]
 features = ["serde"]
-version = "0.4"
+version = "*"
 
 [dependencies.serde]
 features = ["derive"]
-version = "^1.0"
+version = "*"
 
 [dev-dependencies]
-tempfile = "^3.1.0"
+tempfile = "*"

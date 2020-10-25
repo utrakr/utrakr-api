@@ -153,13 +153,13 @@ async fn create_micro_url(mut req: Request<AppState>) -> tide::Result<Response> 
 }
 
 async fn redirect_micro_url(req: Request<AppState>) -> tide::Result<Response> {
-    let id: String = req.param("id").unwrap_or_else(|_| "".into());
+    let id: &str = req.param("id").unwrap_or("");
     let url_dao = &req.state().url_dao;
     let domain: String = req.state().app_config.default_base_host.to_owned();
     let cookie_secure = req.state().app_config.cookie_secure;
 
     let found: Option<String> = url_dao
-        .get_micro_url(&id)
+        .get_micro_url(id)
         .await
         .map_err(|e| tide::Error::new(StatusCode::InternalServerError, e))?;
     match found {
