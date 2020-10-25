@@ -1,11 +1,12 @@
 use crate::events::event_reader::EventReader;
 use crate::events::LogEvent;
-use crate::RedirectEvent;
-use anyhow::Result;
+
+
 use chrono::prelude::*;
 use chrono::{DateTime, Duration, DurationRound, Utc};
 use fehler::*;
 use itertools::Itertools as _;
+use serde_json::Value;
 use std::path::PathBuf;
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -13,6 +14,8 @@ use std::path::PathBuf;
 pub struct ViewsRequest {
     from_date: DateTime<Utc>,
     to_date: DateTime<Utc>,
+    #[serde(with = "parse_duration")]
+    group_by_duration: Option<Duration>,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
@@ -36,39 +39,57 @@ impl ViewsDao {
     }
 
     #[throws(anyhow::Error)]
-    pub fn get_views_data(&self, _request: &ViewsRequest) -> ViewsData {
-        let events = self.event_reader.iter();
-        let events = events.filter(filter_cat).filter_map(|e| e.ok());
+    pub fn get_views_data(&self, request: &ViewsRequest) -> ViewsData {
+        let time_range = request.from_date.timestamp_millis()..request.to_date.timestamp_millis();
+        let dur = request.group_by_duration.unwrap_or_else(|| Duration::hours(1));
+
+        let events = self.event_reader.iter::<Value>();
+        let events = events
+            .filter_map(|e| e.ok())
+            .filter(|r| r.category == "redirect")
+            .filter(|r| time_range.contains(&r.id.timestamp_millis()));
 
         let mut data = ViewsData {
             x: vec![],
             y: vec![],
         };
-        for (dt, group) in &events.group_by(hour) {
-            data.x.push(dt.clone());
+        for (dt, group) in
+            &events.group_by(|event| event.to_datetime().duration_trunc(dur).unwrap())
+        {
+            data.x.push(dt);
             data.y.push(group.count());
         }
         data
     }
 }
 
-fn filter_cat(row: &Result<LogEvent<RedirectEvent>>) -> bool {
-    row.as_ref()
-        .map(|e| e.category == "redirect")
-        .unwrap_or(false)
-}
-
-fn hour<T>(event: &LogEvent<T>) -> DateTime<Utc> {
-    event
-        .to_datetime()
-        .duration_trunc(Duration::hours(1))
-        .unwrap() // todo: okay to round here?
-}
-
-impl<T> LogEvent<T> {
+impl LogEvent<Value> {
     fn to_datetime(&self) -> DateTime<Utc> {
         let datetime = self.id.timestamp_millis();
         // todo: can i create with ms?
         DateTime::from_utc(NaiveDateTime::from_timestamp(datetime / 1000, 0), Utc)
+    }
+}
+
+mod parse_duration {
+    use chrono::{Duration};
+    use serde::{Deserializer, Serializer};
+
+    pub fn serialize<S>(duration: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if let Some(duration) = duration {
+            serializer.serialize_str(&duration.to_string())
+        } else {
+            serializer.serialize_none()
+        }
+    }
+
+    pub fn deserialize<'de, D>(_deserializer: D) -> Result<Option<Duration>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        unimplemented!()
     }
 }
