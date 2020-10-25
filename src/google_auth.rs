@@ -20,8 +20,8 @@ pub fn get_claim_from_google(token: &str) -> Option<GoogleClaims> {
     }
 
     assert!(resp.ok());
-    if let Ok(KEYS) = resp.into_json() {
-        for jwk in KEYS["keys"].as_array().unwrap() {
+    if let Ok(j) = resp.into_json() {
+        for jwk in j["keys"].as_array().unwrap() {
             if let Ok(alg) = Algorithm::from_str(jwk["alg"].as_str().unwrap()) {
                 let token = decode::<GoogleClaims>(
                     &token,
