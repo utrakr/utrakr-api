@@ -18,8 +18,13 @@ pub struct ViewsRequest {
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 pub struct ViewsData {
-    x: Vec<DateTime<Utc>>,
-    y: Vec<usize>,
+    rows: Vec<ViewsDataRow>,
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct ViewsDataRow {
+    date: DateTime<Utc>,
+    views: usize,
 }
 
 #[derive(Clone)]
@@ -52,14 +57,15 @@ impl ViewsDao {
             .filter(|r| time_range.contains(&r.id.timestamp_millis()));
 
         let mut data = ViewsData {
-            x: vec![],
-            y: vec![],
+            rows: vec![],
         };
         for (dt, group) in
             &events.group_by(|event| event.to_datetime().duration_trunc(dur).unwrap())
         {
-            data.x.push(dt);
-            data.y.push(group.count());
+            data.rows.push(ViewsDataRow{
+                date: dt,
+                views: group.count(),
+            });
         }
         data
     }
